@@ -1,0 +1,13 @@
+package com.example.productapi;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication // Combines @Configuration, @EnableAutoConfiguration, @ComponentScan
+public class ProductApiApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(ProductApiApplication.class, args);
+    }
+
+}
