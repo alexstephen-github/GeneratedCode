@@ -9,51 +9,39 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.example</groupId>
-    <artifactId>springboot-kafka-template</artifactId>
+    <artifactId>demo</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>springboot-kafka-template</name>
-    <description>Spring Boot Kafka Template Project</description>
+    <name>demo</name>
+    <description>Demo project for Spring Boot REST API</description>
 
     <properties>
         <java.version>17</java.version> <!-- Ensure this matches your JDK version -->
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Web Starter for REST endpoints -->
+        <!-- Spring Boot Web Starter: Includes Tomcat and Spring MVC -->
         <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Spring Kafka for Kafka integration -->
-        <dependency>
-            <groupId>org.springframework.kafka</groupId>
-            <artifactId>spring-kafka</artifactId>
-        </dependency>
-
-        <!-- Lombok for boilerplate code reduction (optional but highly recommended) -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- Spring Boot Test Starter -->
+        <!-- Spring Boot Test Starter: Includes JUnit, Mockito, Spring Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- Spring Kafka Test for unit and integration testing Kafka components -->
+        <!-- Lombok (Optional but highly recommended for boilerplate reduction) -->
         <dependency>
-            <groupId>org.springframework.kafka</groupId>
-            <artifactId>spring-kafka-test</artifactId>
-            <scope>test</scope>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!-- Spring Boot Maven Plugin: For building executable JARs -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
