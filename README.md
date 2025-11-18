@@ -1,958 +1,701 @@
-Hello there! I'd be happy to provide a comprehensive code template for a Spring Boot REST API. This template will include a basic CRUD (Create, Read, Update, Delete) functionality for a `Product` entity, along with service and controller layers, and essential unit tests.
+Hello there! I'd be happy to help you with a complete code template for a Spring Boot Kafka application. This template will include a producer to send messages and a consumer to receive them, along with necessary configurations, a simple data model, and unit tests for both producer and consumer components.
 
-### Project Overview
-
-This template demonstrates a common layered architecture for Spring Boot applications:
-
-1.  **Model**: Defines the data structure (e.g., `Product`).
-2.  **Repository**: Handles data persistence (here, an in-memory repository for simplicity).
-3.  **Service**: Contains business logic and orchestrates data operations.
-4.  **Controller**: Exposes REST endpoints for client interaction.
-5.  **Tests**: Unit tests for both service and controller layers.
-
-### Project Structure (Conceptual)
-
-```
-├── src
-│   ├── main
-│   │   ├── java
-│   │   │   └── com
-│   │   │       └── example
-│   │   │           └── demo
-│   │   │               ├── DemoApplication.java  (Main Spring Boot app)
-│   │   │               ├── model
-│   │   │               │   └── Product.java      (Data model)
-│   │   │               ├── repository
-│   │   │               │   └── ProductRepository.java (In-memory data store)
-│   │   │               ├── service
-│   │   │               │   └── ProductService.java (Business logic)
-│   │   │               └── controller
-│   │   │                   └── ProductController.java (REST endpoints)
-│   │   └── resources
-│   │       └── application.properties (Configuration)
-│   └── test
-│       └── java
-│           └── com
-│               └── example
-│                   └── demo
-│                       ├── service
-│                       │   └── ProductServiceTest.java (Service unit tests)
-│                       └── controller
-│                           └── ProductControllerTest.java (Controller unit tests)
-└── pom.xml (Maven build file)
-```
+This setup assumes you have a Kafka broker running, either locally or accessible via a network.
 
 ---
 
-Let's generate the code!
+### Project Overview
 
-#### 1. `pom.xml` (Maven Build File)
+This Spring Boot application will demonstrate:
+*   **Kafka Producer:** An HTTP endpoint to send custom `Message` objects to a Kafka topic.
+*   **Kafka Consumer:** A listener that consumes `Message` objects from the same Kafka topic.
+*   **Custom Data Model:** A `Message` class with `String` content and a `LocalDateTime` timestamp.
+*   **Configuration:** Separate configurations for Kafka producer and consumer properties, including serialization/deserialization.
+*   **Unit Tests:** Tests for the producer service and consumer listener.
 
-This file defines your project's dependencies and build configuration.
+Let's get started with the code!
 
-$$$$
-&&&& pom.xml
-@@@@
+---
+
+#### 1. `pom.xml` (Maven Dependencies)
+
+This file defines all the necessary dependencies for our Spring Boot Kafka application.
+
+`$$$$ `
+`&&&& pom.xml`
+`@@@@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.5</version> <!-- Use the latest stable Spring Boot version -->
-        <relativePath/> <!-- lookup parent from repository -->
-    </parent>
-    <groupId>com.example</groupId>
-    <artifactId>demo</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>demo</name>
-    <description>Demo project for Spring Boot REST API</description>
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.2.5</version> <!-- Use a recent stable Spring Boot version -->
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.example</groupId>
+	<artifactId>my-kafka-app</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>my-kafka-app</name>
+	<description>Spring Boot Kafka Template</description>
+	<properties>
+		<java.version>17</java.version> <!-- Ensure this matches your JDK version -->
+	</properties>
+	<dependencies>
+		<!-- Spring Boot Web Starter for REST endpoints -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+		<!-- Spring Kafka Starter for Kafka integration -->
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
+		<!-- Lombok for boilerplate code (getters, setters, constructors) -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<!-- Spring Boot Test Starter for testing -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- Spring Kafka Test for testing Kafka components -->
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 
-    <properties>
-        <java.version>17</java.version> <!-- Ensure this matches your JDK version -->
-    </properties>
-
-    <dependencies>
-        <!-- Spring Boot Web Starter: Includes Tomcat and Spring MVC -->
-        <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-
-        <!-- Spring Boot Test Starter: Includes JUnit, Mockito, Spring Test -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Lombok (Optional but highly recommended for boilerplate reduction) -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <!-- Spring Boot Maven Plugin: For building executable JARs -->
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>
 @@@@
 **Explanation:**
-*   **`spring-boot-starter-parent`**: Provides default configurations and dependency management for Spring Boot projects.
-*   **`spring-boot-starter-web`**: Essential for building web applications, including RESTful services. It brings in Spring MVC, Tomcat, and Jackson (for JSON processing).
-*   **`spring-boot-starter-test`**: Provides testing capabilities, including JUnit 5, Mockito, and Spring Test.
-*   **`lombok`**: A library that automatically plugs into your build process and auto-generates code like getters, setters, constructors, etc., reducing boilerplate code. It's optional but widely used.
-*   **`spring-boot-maven-plugin`**: Creates an executable JAR file that includes all necessary dependencies.
+*   **`spring-boot-starter-web`**: Provides necessary dependencies for building RESTful web applications.
+*   **`spring-kafka`**: The core Spring Kafka integration library.
+*   **`lombok`**: A utility to reduce boilerplate code (getters, setters, constructors).
+*   **`spring-boot-starter-test`**: Standard testing dependencies for Spring Boot applications.
+*   **`spring-kafka-test`**: Specific utilities for testing Kafka applications, including `EmbeddedKafkaBroker`.
 
 ---
 
-#### 2. Main Spring Boot Application Class
+#### 2. `application.properties` (Configuration)
 
-This is the entry point of your Spring Boot application.
+This file holds the configuration properties for our application, including Kafka broker details and topic names.
 
-$$$$ src/main/java/com/example/demo
-&&&& DemoApplication.java
+`$$$$ src/main/resources`
+`&&&& application.properties`
+`@@@@
+# Kafka Broker Configuration
+spring.kafka.bootstrap-servers=localhost:9092
+spring.kafka.properties.schema.registry.url=http://localhost:8081 # If using Confluent Schema Registry
+
+# Producer Configuration
+spring.kafka.producer.key-serializer=org.apache.kafka.common.serialization.StringSerializer
+spring.kafka.producer.value-serializer=org.springframework.kafka.support.serializer.JsonSerializer
+spring.kafka.producer.acks=all
+spring.kafka.producer.retries=0
+spring.kafka.producer.batch-size=16384
+spring.kafka.producer.linger-ms=1
+spring.kafka.producer.buffer-memory=33554432
+
+# Consumer Configuration
+spring.kafka.consumer.group-id=my_spring_boot_app_group
+spring.kafka.consumer.auto-offset-reset=earliest
+spring.kafka.consumer.key-deserializer=org.apache.kafka.common.serialization.StringDeserializer
+spring.kafka.consumer.value-deserializer=org.springframework.kafka.support.serializer.JsonDeserializer
+spring.kafka.consumer.properties.spring.json.trusted.packages=* # Important for JSON deserialization
+
+# Define Kafka Topic
+app.kafka.topic.name=my-app-topic
 @@@@
-package com.example.demo;
+**Explanation:**
+*   **`spring.kafka.bootstrap-servers`**: Address of your Kafka broker. Change `localhost:9092` if your broker is elsewhere.
+*   **`spring.kafka.producer.*`**: Properties for the Kafka producer, including serializers. We use `JsonSerializer` to send custom objects.
+*   **`spring.kafka.consumer.*`**: Properties for the Kafka consumer, including `group-id` and deserializers. `JsonDeserializer` is used to convert JSON back into our `Message` object.
+*   **`spring.kafka.consumer.properties.spring.json.trusted.packages=*`**: This is crucial when using `JsonDeserializer` to tell Spring which packages are safe to deserialize JSON objects into. Using `*` trusts all, but in a production environment, you might want to specify exact packages (e.g., `com.example.kafka.model`).
+*   **`app.kafka.topic.name`**: A custom property to define our Kafka topic name, making it easy to change.
+
+---
+
+#### 3. `MyKafkaAppApplication.java` (Main Application Class)
+
+The standard Spring Boot entry point.
+
+`$$$$ src/main/java/com/example/kafka`
+`&&&& MyKafkaAppApplication.java`
+`@@@@
+package com.example.kafka;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-/**
- * The main entry point for the Spring Boot application.
- * This class uses @SpringBootApplication which is a convenience annotation that adds:
- * - @Configuration: Tags the class as a source of bean definitions for the application context.
- * - @EnableAutoConfiguration: Tells Spring Boot to start adding beans based on classpath settings,
- *   other beans, and various property settings. For example, if spring-webmvc is on the classpath,
- *   this annotation flags the application as a web application and sets up a DispatcherServlet.
- * - @ComponentScan: Tells Spring to look for other components, configurations, and services
- *   in the `com.example.demo` package, allowing it to find controllers, services, etc.
- */
 @SpringBootApplication
-public class DemoApplication {
+public class MyKafkaAppApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(DemoApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(MyKafkaAppApplication.class, args);
+	}
 
 }
 @@@@
 **Explanation:**
-*   **`@SpringBootApplication`**: A convenience annotation that combines `@Configuration`, `@EnableAutoConfiguration`, and `@ComponentScan`. It's the primary annotation for a Spring Boot application.
-*   **`main` method**: Uses `SpringApplication.run()` to launch the application.
+*   `@SpringBootApplication`: This annotation is a convenience annotation that adds:
+    *   `@Configuration`: Tags the class as a source of bean definitions for the application context.
+    *   `@EnableAutoConfiguration`: Tells Spring Boot to start adding beans based on classpath settings, other beans, and various property settings.
+    *   `@ComponentScan`: Tells Spring to look for other components, configurations, and services in the `com.example.kafka` package, allowing it to find our controllers, services, and listeners.
 
 ---
 
-#### 3. Model
+#### 4. `model/Message.java` (Data Model)
 
-The `Product` class represents the data structure for products in our application.
+A simple POJO representing the message structure we'll send and receive.
 
-$$$$ src/main/java/com/example/demo/model
-&&&& Product.java
-@@@@
-package com.example.demo.model;
+`$$$$ src/main/java/com/example/kafka/model`
+`&&&& Message.java`
+`@@@@
+package com.example.kafka.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Represents a Product entity in the system.
- * Uses Lombok annotations to reduce boilerplate code.
- */
-@Data // Generates getters, setters, toString, equals, and hashCode methods
+import java.time.LocalDateTime;
+
+@Data // Generates getters, setters, toString, equals, and hashCode
 @NoArgsConstructor // Generates a no-argument constructor
-@AllArgsConstructor // Generates a constructor with all fields as arguments
-public class Product {
-    private Long id;
-    private String name;
-    private double price;
+@AllArgsConstructor // Generates a constructor with all fields
+public class Message {
+    private String content;
+    private LocalDateTime timestamp;
 }
 @@@@
 **Explanation:**
-*   **`@Data` (Lombok)**: Automatically generates getters, setters, `toString()`, `equals()`, and `hashCode()` methods.
-*   **`@NoArgsConstructor` (Lombok)**: Generates a constructor with no arguments.
-*   **`@AllArgsConstructor` (Lombok)**: Generates a constructor with arguments for all fields.
-*   **`id`, `name`, `price`**: Basic attributes for a product.
+*   **`@Data`**: A Lombok annotation that automatically generates standard methods like `getters`, `setters`, `equals`, `hashCode`, and `toString`.
+*   **`@NoArgsConstructor`**: Lombok annotation for a constructor without any arguments. Essential for JSON deserialization.
+*   **`@AllArgsConstructor`**: Lombok annotation for a constructor with all fields as arguments. Useful for creating instances easily.
+*   **`LocalDateTime`**: Used for a precise timestamp.
 
 ---
 
-#### 4. Repository
+#### 5. `config/KafkaProducerConfig.java` (Producer Configuration)
 
-This class handles data access for `Product` entities. For this template, we're using an in-memory `ConcurrentHashMap` to simulate a database.
+Configures the `ProducerFactory` and `KafkaTemplate` for sending messages.
 
-$$$$ src/main/java/com/example/demo/repository
-&&&& ProductRepository.java
-@@@@
-package com.example.demo.repository;
+`$$$$ src/main/java/com/example/kafka/config`
+`&&&& KafkaProducerConfig.java`
+`@@@@
+package com.example.kafka.config;
 
-import com.example.demo.model.Product;
-import org.springframework.stereotype.Repository;
+import com.example.kafka.model.Message;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * A simple in-memory repository for Product entities.
- * This simulates a database interaction without requiring a real database setup.
- * Uses ConcurrentHashMap for thread-safe storage and AtomicLong for ID generation.
- */
-@Repository // Marks this class as a Spring repository component
-public class ProductRepository {
+@Configuration
+public class KafkaProducerConfig {
 
-    // Simulates a database table where keys are IDs and values are Product objects
-    private final Map<Long, Product> products = new ConcurrentHashMap<>();
-    private final AtomicLong nextId = new AtomicLong(1); // For generating unique IDs
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers;
 
-    /**
-     * Finds all products currently stored in the repository.
-     * @return A list of all products.
-     */
-    public List<Product> findAll() {
-        return new ArrayList<>(products.values());
+    @Bean
+    public ProducerFactory<String, Message> producerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        // Additional producer properties can be added here
+        return new DefaultKafkaProducerFactory<>(configProps);
     }
 
-    /**
-     * Finds a product by its ID.
-     * @param id The ID of the product to find.
-     * @return An Optional containing the product if found, or an empty Optional otherwise.
-     */
-    public Optional<Product> findById(Long id) {
-        return Optional.ofNullable(products.get(id));
-    }
-
-    /**
-     * Saves a new product or updates an existing one.
-     * If the product ID is null, it's treated as a new product and a new ID is assigned.
-     * If the product ID exists, the existing product is updated.
-     * @param product The product to save or update.
-     * @return The saved/updated product with its ID.
-     */
-    public Product save(Product product) {
-        if (product.getId() == null) {
-            // New product: assign a unique ID
-            product.setId(nextId.getAndIncrement());
-        }
-        products.put(product.getId(), product);
-        return product;
-    }
-
-    /**
-     * Deletes a product by its ID.
-     * @param id The ID of the product to delete.
-     * @return true if the product was found and deleted, false otherwise.
-     */
-    public boolean deleteById(Long id) {
-        return products.remove(id) != null;
-    }
-
-    /**
-     * Clears all products from the repository (useful for testing or full reset).
-     */
-    public void clear() {
-        products.clear();
-        nextId.set(1);
+    @Bean
+    public KafkaTemplate<String, Message> kafkaTemplate() {
+        return new KafkaTemplate<>(producerFactory());
     }
 }
 @@@@
 **Explanation:**
-*   **`@Repository`**: Indicates that this class is a repository component in the Spring application context, enabling Spring's exception translation and other features.
-*   **`ConcurrentHashMap`**: A thread-safe map used to store products, simulating a database table.
-*   **`AtomicLong`**: Used to generate unique IDs for new products in a thread-safe manner.
-*   **`findAll()`, `findById()`, `save()`, `deleteById()`**: Standard CRUD operations.
-*   **`Optional<Product>`**: Used by `findById()` to clearly indicate that a product might not be found, promoting safer code.
+*   **`@Configuration`**: Indicates that this class provides bean definitions.
+*   **`@Value("${spring.kafka.bootstrap-servers}")`**: Injects the Kafka broker address from `application.properties`.
+*   **`producerFactory()`**:
+    *   Creates a `Map` of producer configurations, including `BOOTSTRAP_SERVERS_CONFIG` and the `Serializer` classes for both key and value.
+    *   Uses `StringSerializer` for keys and `JsonSerializer` for `Message` objects.
+    *   Returns a `DefaultKafkaProducerFactory` which is responsible for creating producer instances.
+*   **`kafkaTemplate()`**:
+    *   Creates and returns a `KafkaTemplate` instance, which is the high-level API for sending messages to Kafka. It uses the `ProducerFactory` we defined.
 
 ---
 
-#### 5. Service Layer
+#### 6. `config/KafkaConsumerConfig.java` (Consumer Configuration)
 
-The `ProductService` class contains the business logic for managing products.
+Configures the `ConsumerFactory` and `ConcurrentKafkaListenerContainerFactory` for receiving messages.
 
-$$$$ src/main/java/com/example/demo/service
-&&&& ProductService.java
+`$$$$ src/main/java/com/example/kafka/config`
+`&&&& KafkaConsumerConfig.java`
+`@@@@
+package com.example.kafka.config;
+
+import com.example.kafka.model.Message;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Configuration
+public class KafkaConsumerConfig {
+
+    @Value("${spring.kafka.bootstrap-servers}")
+    private String bootstrapServers;
+
+    @Value("${spring.kafka.consumer.group-id}")
+    private String groupId;
+
+    @Bean
+    public ConsumerFactory<String, Message> consumerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        // Using ErrorHandlingDeserializer to wrap JsonDeserializer for better error handling
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
+        props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, "*"); // Crucial for JSON deserialization
+
+        // Optionally, specify the target type for the JsonDeserializer if not using trusted packages wildcard
+        // props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "com.example.kafka.model.Message");
+
+        return new DefaultKafkaConsumerFactory<>(props,
+                new StringDeserializer(),
+                new ErrorHandlingDeserializer<>(new JsonDeserializer<>(Message.class)));
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, Message> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, Message> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory());
+        // Set to true to automatically commit offsets after each message is processed
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+        return factory;
+    }
+}
 @@@@
-package com.example.demo.service;
+**Explanation:**
+*   **`@Configuration`**: Marks this as a configuration class.
+*   **`@Value`**: Injects Kafka broker and group ID from properties.
+*   **`consumerFactory()`**:
+    *   Sets up consumer properties including `BOOTSTRAP_SERVERS_CONFIG`, `GROUP_ID_CONFIG`, and deserializers.
+    *   Uses `StringDeserializer` for keys and `ErrorHandlingDeserializer` wrapping `JsonDeserializer` for values. `ErrorHandlingDeserializer` ensures that if a message cannot be deserialized, it won't crash the consumer, but rather log the error and allow the consumer to process subsequent messages.
+    *   `JsonDeserializer.TRUSTED_PACKAGES`: Tells `JsonDeserializer` which classes are safe to instantiate from JSON. `*` is convenient for development.
+*   **`kafkaListenerContainerFactory()`**:
+    *   This factory creates the listener containers that host the `@KafkaListener` methods.
+    *   It uses the `consumerFactory()` we defined.
+    *   **`setAckMode(ContainerProperties.AckMode.RECORD)`**: Configures the acknowledgment mode. `RECORD` means the offset is committed after each record is successfully processed. Other options include `BATCH`, `TIME`, etc.
 
-import com.example.demo.model.Product;
-import com.example.demo.repository.ProductRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+---
+
+#### 7. `service/KafkaProducerService.java` (Producer Service)
+
+A service that uses `KafkaTemplate` to send `Message` objects.
+
+`$$$$ src/main/java/com/example/kafka/service`
+`&&&& KafkaProducerService.java`
+`@@@@
+package com.example.kafka.service;
+
+import com.example.kafka.model.Message;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.concurrent.CompletableFuture;
 
-/**
- * Service layer for managing Product entities.
- * Contains business logic and orchestrates data access via ProductRepository.
- */
-@Service // Marks this class as a Spring service component
-public class ProductService {
+@Service
+@Slf4j // Lombok annotation for a logger
+public class KafkaProducerService {
 
-    private final ProductRepository productRepository;
+    @Value("${app.kafka.topic.name}")
+    private String topicName;
 
-    /**
-     * Constructor for ProductService, injecting ProductRepository.
-     * Spring's @Autowired handles the dependency injection.
-     */
-    @Autowired
-    public ProductService(ProductRepository productRepository) {
-        this.productRepository = productRepository;
+    private final KafkaTemplate<String, Message> kafkaTemplate;
+
+    public KafkaProducerService(KafkaTemplate<String, Message> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
     }
 
-    /**
-     * Retrieves all products.
-     * @return A list of all products.
-     */
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
-    }
+    public void sendMessage(String key, String messageContent) {
+        Message message = new Message(messageContent, LocalDateTime.now());
 
-    /**
-     * Retrieves a product by its ID.
-     * Throws ResponseStatusException if the product is not found.
-     * @param id The ID of the product to retrieve.
-     * @return The found Product.
-     */
-    public Product getProductById(Long id) {
-        return productRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found with id: " + id));
-    }
+        CompletableFuture<SendResult<String, Message>> future = kafkaTemplate.send(topicName, key, message);
 
-    /**
-     * Creates a new product.
-     * The ID of the product in the input object is ignored; a new ID is always generated.
-     * @param product The product object to create.
-     * @return The newly created product with its assigned ID.
-     */
-    public Product createProduct(Product product) {
-        // Ensure that we create a new product, ignoring any client-provided ID for new creation
-        product.setId(null);
-        return productRepository.save(product);
-    }
-
-    /**
-     * Updates an existing product.
-     * Throws ResponseStatusException if the product to update is not found.
-     * @param id The ID of the product to update.
-     * @param productDetails The product object containing updated details.
-     * @return The updated Product.
-     */
-    public Product updateProduct(Long id, Product productDetails) {
-        Product existingProduct = productRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found with id: " + id));
-
-        existingProduct.setName(productDetails.getName());
-        existingProduct.setPrice(productDetails.getPrice());
-        // Do not update ID. The ID from productDetails is ignored, existingProduct's ID is retained.
-        return productRepository.save(existingProduct);
-    }
-
-    /**
-     * Deletes a product by its ID.
-     * Throws ResponseStatusException if the product to delete is not found.
-     * @param id The ID of the product to delete.
-     */
-    public void deleteProduct(Long id) {
-        if (!productRepository.deleteById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found with id: " + id);
-        }
+        future.whenComplete((result, ex) -> {
+            if (ex == null) {
+                log.info("Sent message=[{}] with offset=[{}] to topic=[{}]",
+                        messageContent,
+                        result.getRecordMetadata().offset(),
+                        result.getRecordMetadata().topic());
+            } else {
+                log.error("Unable to send message=[{}] due to: {}", messageContent, ex.getMessage());
+            }
+        });
     }
 }
 @@@@
 **Explanation:**
-*   **`@Service`**: Indicates that this class is a service component in the Spring application context.
-*   **`@Autowired`**: Used for dependency injection. Spring will automatically provide an instance of `ProductRepository`.
-*   **`getAllProducts()`, `getProductById()`, `createProduct()`, `updateProduct()`, `deleteProduct()`**: These methods encapsulate the business logic.
-*   **`ResponseStatusException`**: Used to signal HTTP error statuses (like `404 Not Found`) directly from the service layer when an entity isn't found, simplifying error handling for the controller.
+*   **`@Service`**: Marks this class as a Spring service component.
+*   **`@Slf4j`**: Lombok annotation that provides a `log` field for logging.
+*   **`@Value("${app.kafka.topic.name}")`**: Injects the topic name from `application.properties`.
+*   **`KafkaTemplate<String, Message> kafkaTemplate`**: Injects the configured `KafkaTemplate`.
+*   **`sendMessage(String key, String messageContent)`**:
+    *   Creates a `Message` object with the given content and current timestamp.
+    *   Calls `kafkaTemplate.send()` to send the message. We're using a `key` here for partitioning (messages with the same key go to the same partition).
+    *   The `send()` method returns a `ListenableFuture` (or `CompletableFuture` in newer Spring versions) for asynchronous processing. We use `whenComplete` to log the result or any error.
 
 ---
 
-#### 6. Controller Layer
+#### 8. `controller/KafkaController.java` (REST Controller)
 
-The `ProductController` class exposes the REST endpoints for interacting with products.
+An HTTP endpoint to trigger message sending.
 
-$$$$ src/main/java/com/example/demo/controller
-&&&& ProductController.java
-@@@@
-package com.example.demo.controller;
+`$$$$ src/main/java/com/example/kafka/controller`
+`&&&& KafkaController.java`
+`@@@@
+package com.example.kafka.controller;
 
-import com.example.demo.model.Product;
-import com.example.demo.service.ProductService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import com.example.kafka.service.KafkaProducerService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+@RestController
+@RequestMapping("/kafka")
+public class KafkaController {
 
-/**
- * REST Controller for managing Product resources.
- * Handles HTTP requests and delegates business logic to ProductService.
- */
-@RestController // Marks this class as a Spring REST controller
-@RequestMapping("/api/products") // Base path for all endpoints in this controller
-public class ProductController {
+    private final KafkaProducerService producerService;
 
-    private final ProductService productService;
-
-    /**
-     * Constructor for ProductController, injecting ProductService.
-     */
-    @Autowired
-    public ProductController(ProductService productService) {
-        this.productService = productService;
+    public KafkaController(KafkaProducerService producerService) {
+        this.producerService = producerService;
     }
 
-    /**
-     * GET /api/products
-     * Retrieves all products.
-     * @return A ResponseEntity containing a list of products and HTTP status OK.
-     */
-    @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
-        List<Product> products = productService.getAllProducts();
-        return new ResponseEntity<>(products, HttpStatus.OK);
-    }
+    @PostMapping("/publish")
+    public ResponseEntity<String> sendMessageToKafka(
+            @RequestParam("message") String message,
+            @RequestParam(value = "key", required = false) String key) {
+        
+        // If no key is provided, Kafka will assign one or use a round-robin strategy.
+        // For simplicity, we can default to a generic key if not provided for now,
+        // or let the producer service handle null key (which KafkaTemplate supports).
+        // Let's ensure a key for demonstration, otherwise null is fine.
+        if (key == null || key.isEmpty()) {
+            key = "default-key"; // Or generate a UUID, or let Kafka handle it
+        }
 
-    /**
-     * GET /api/products/{id}
-     * Retrieves a product by its ID.
-     * @param id The ID of the product to retrieve from the URL path.
-     * @return A ResponseEntity containing the product and HTTP status OK if found.
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
-        Product product = productService.getProductById(id);
-        return new ResponseEntity<>(product, HttpStatus.OK);
-    }
-
-    /**
-     * POST /api/products
-     * Creates a new product.
-     * @param product The product object sent in the request body.
-     * @return A ResponseEntity containing the newly created product and HTTP status CREATED.
-     */
-    @PostMapping
-    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-        Product createdProduct = productService.createProduct(product);
-        return new ResponseEntity<>(createdProduct, HttpStatus.CREATED);
-    }
-
-    /**
-     * PUT /api/products/{id}
-     * Updates an existing product.
-     * @param id The ID of the product to update from the URL path.
-     * @param productDetails The product object with updated details sent in the request body.
-     * @return A ResponseEntity containing the updated product and HTTP status OK.
-     */
-    @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product productDetails) {
-        Product updatedProduct = productService.updateProduct(id, productDetails);
-        return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
-    }
-
-    /**
-     * DELETE /api/products/{id}
-     * Deletes a product by its ID.
-     * @param id The ID of the product to delete from the URL path.
-     * @return A ResponseEntity with HTTP status NO_CONTENT (204) upon successful deletion.
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        productService.deleteProduct(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        producerService.sendMessage(key, message);
+        return ResponseEntity.ok("Message sent to Kafka successfully: " + message);
     }
 }
 @@@@
 **Explanation:**
-*   **`@RestController`**: Combines `@Controller` and `@ResponseBody`. It indicates that this class handles incoming web requests and that the return values of its methods should be directly bound to the web response body.
-*   **`@RequestMapping("/api/products")`**: Defines the base URL path for all endpoints in this controller.
-*   **`@Autowired`**: Injects `ProductService`.
-*   **`@GetMapping`, `@PostMapping`, `@PutMapping`, `@DeleteMapping`**: Map HTTP GET, POST, PUT, and DELETE requests to specific handler methods.
-*   **`@PathVariable`**: Binds a URI template variable (e.g., `{id}`) to a method parameter.
-*   **`@RequestBody`**: Binds the HTTP request body to a method parameter (e.g., converts JSON to a `Product` object).
-*   **`ResponseEntity<?>`**: A convenient way to customize the HTTP response, including status code, headers, and body.
+*   **`@RestController`**: Combines `@Controller` and `@ResponseBody`, indicating that this class handles web requests and returns data directly.
+*   **`@RequestMapping("/kafka")`**: Maps all requests to this controller under the `/kafka` path.
+*   **`@PostMapping("/publish")`**: Maps HTTP POST requests to `/kafka/publish` to this method.
+*   **`@RequestParam`**: Extracts `message` and `key` parameters from the request. `key` is optional.
+*   It injects `KafkaProducerService` and calls its `sendMessage` method to send the user-provided message.
 
 ---
 
-#### 7. Configuration (`application.properties`)
+#### 9. `listener/KafkaConsumerListener.java` (Consumer Listener)
 
-Basic configuration for your Spring Boot application.
+A component that listens for messages on the configured Kafka topic.
 
-$$$$ src/main/resources
-&&&& application.properties
-@@@@
-# Server port
-server.port=8080
+`$$$$ src/main/java/com/example/kafka/listener`
+`&&&& KafkaConsumerListener.java`
+`@@@@
+package com.example.kafka.listener;
 
-# Logging level (optional)
-logging.level.com.example.demo=INFO
+import com.example.kafka.model.Message;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.stereotype.Component;
+
+@Component
+@Slf4j
+public class KafkaConsumerListener {
+
+    @KafkaListener(topics = "${app.kafka.topic.name}", groupId = "${spring.kafka.consumer.group-id}", containerFactory = "kafkaListenerContainerFactory")
+    public void listen(Message message, Acknowledgment acknowledgment) {
+        log.info("Received message: {} at {}", message.getContent(), message.getTimestamp());
+        // Process the message here
+        // For demonstration, we just log it.
+
+        // Manually acknowledge the message if AckMode is not RECORD or BATCH
+        // For AckMode.RECORD, Spring Kafka automatically commits after method returns
+        acknowledgment.acknowledge();
+    }
+}
 @@@@
 **Explanation:**
-*   **`server.port`**: Specifies the port on which the embedded Tomcat server will run (default is 8080).
-*   **`logging.level`**: Configures the logging level for your application package.
+*   **`@Component`**: Marks this class as a Spring component, so it's picked up by component scanning.
+*   **`@Slf4j`**: Provides a logger.
+*   **`@KafkaListener`**: The core annotation for Kafka consumers.
+    *   **`topics`**: Specifies the topic(s) to listen to, pulled from `application.properties`.
+    *   **`groupId`**: Specifies the consumer group ID, also from `application.properties`.
+    *   **`containerFactory`**: Points to the `ConcurrentKafkaListenerContainerFactory` bean that defines the common configuration for the listener container (e.g., deserializers, error handling).
+*   **`listen(Message message, Acknowledgment acknowledgment)`**:
+    *   This method will be invoked whenever a new `Message` is available on the configured topic. Spring Kafka automatically deserializes the JSON payload into a `Message` object.
+    *   **`Acknowledgment acknowledgment`**: Provided by Spring Kafka, allows manual acknowledgment of messages. While `AckMode.RECORD` (set in `KafkaConsumerConfig`) handles automatic acknowledgment upon successful method completion, explicitly calling `acknowledgment.acknowledge()` can be useful for finer control, especially in more complex scenarios or different `AckMode` settings. It's often included for clarity or future flexibility.
 
 ---
 
-### Unit Test Cases
+#### 10. `test/service/KafkaProducerServiceTest.java` (Producer Service Unit Test)
 
-Now, let's add unit tests for the `ProductService` and `ProductController`.
+Unit test for `KafkaProducerService`, mocking `KafkaTemplate`.
 
-#### 8. Service Unit Test
+`$$$$ src/test/java/com/example/kafka/service`
+`&&&& KafkaProducerServiceTest.java`
+`@@@@
+package com.example.kafka.service;
 
-Tests the business logic of the `ProductService` in isolation, mocking its dependencies.
-
-$$$$ src/test/java/com/example/demo/service
-&&&& ProductServiceTest.java
-@@@@
-package com.example.demo.service;
-
-import com.example.demo.model.Product;
-import com.example.demo.repository.ProductRepository;
+import com.example.kafka.model.Message;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
+import org.springframework.util.concurrent.ListenableFuture; // For mockito.when() return type
+import org.springframework.util.concurrent.SettableListenableFuture;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
-/**
- * Unit tests for the ProductService.
- * Uses Mockito to mock the ProductRepository dependency.
- */
-@ExtendWith(MockitoExtension.class) // Enables Mockito annotations for JUnit 5
-class ProductServiceTest {
-
-    @Mock // Creates a mock instance of ProductRepository
-    private ProductRepository productRepository;
-
-    @InjectMocks // Injects the mock(s) into an instance of ProductService
-    private ProductService productService;
-
-    private Product product1;
-    private Product product2;
-
-    @BeforeEach // Sets up test data before each test method
-    void setUp() {
-        product1 = new Product(1L, "Laptop", 1200.00);
-        product2 = new Product(2L, "Mouse", 25.00);
-    }
-
-    @Test
-    @DisplayName("Should return all products")
-    void getAllProducts_shouldReturnAllProducts() {
-        // Given
-        List<Product> products = Arrays.asList(product1, product2);
-        when(productRepository.findAll()).thenReturn(products); // Mock repository behavior
-
-        // When
-        List<Product> result = productService.getAllProducts();
-
-        // Then
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals(product1, result.get(0));
-        assertEquals(product2, result.get(1));
-        verify(productRepository, times(1)).findAll(); // Verify that findAll was called once
-    }
-
-    @Test
-    @DisplayName("Should return product by ID")
-    void getProductById_shouldReturnProduct() {
-        // Given
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
-
-        // When
-        Product result = productService.getProductById(1L);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(product1.getId(), result.getId());
-        assertEquals(product1.getName(), result.getName());
-        verify(productRepository, times(1)).findById(1L);
-    }
-
-    @Test
-    @DisplayName("Should throw exception if product not found by ID")
-    void getProductById_shouldThrowExceptionWhenNotFound() {
-        // Given
-        when(productRepository.findById(99L)).thenReturn(Optional.empty());
-
-        // When & Then
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> productService.getProductById(99L));
-
-        assertEquals("404 NOT_FOUND \"Product not found with id: 99\"", exception.getMessage());
-        verify(productRepository, times(1)).findById(99L);
-    }
-
-    @Test
-    @DisplayName("Should create a new product")
-    void createProduct_shouldCreateProduct() {
-        // Given
-        Product newProduct = new Product(null, "Keyboard", 75.00);
-        Product savedProduct = new Product(3L, "Keyboard", 75.00); // Repository assigns ID
-        when(productRepository.save(any(Product.class))).thenReturn(savedProduct);
-
-        // When
-        Product result = productService.createProduct(newProduct);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(3L, result.getId()); // Verify ID was assigned
-        assertEquals("Keyboard", result.getName());
-        verify(productRepository, times(1)).save(any(Product.class));
-    }
-
-    @Test
-    @DisplayName("Should update an existing product")
-    void updateProduct_shouldUpdateProduct() {
-        // Given
-        Product updatedDetails = new Product(null, "Updated Laptop", 1300.00); // ID ignored by service logic
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
-        when(productRepository.save(any(Product.class))).thenReturn(
-                new Product(1L, "Updated Laptop", 1300.00)
-        );
-
-        // When
-        Product result = productService.updateProduct(1L, updatedDetails);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(1L, result.getId()); // ID remains the same
-        assertEquals("Updated Laptop", result.getName());
-        assertEquals(1300.00, result.getPrice());
-        verify(productRepository, times(1)).findById(1L);
-        verify(productRepository, times(1)).save(any(Product.class));
-    }
-
-    @Test
-    @DisplayName("Should throw exception if product not found for update")
-    void updateProduct_shouldThrowExceptionWhenNotFound() {
-        // Given
-        Product updatedDetails = new Product(null, "NonExistent Product", 100.00);
-        when(productRepository.findById(99L)).thenReturn(Optional.empty());
-
-        // When & Then
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> productService.updateProduct(99L, updatedDetails));
-
-        assertEquals("404 NOT_FOUND \"Product not found with id: 99\"", exception.getMessage());
-        verify(productRepository, times(1)).findById(99L);
-        verify(productRepository, never()).save(any(Product.class)); // Save should not be called
-    }
-
-    @Test
-    @DisplayName("Should delete a product by ID")
-    void deleteProduct_shouldDeleteProduct() {
-        // Given
-        when(productRepository.deleteById(1L)).thenReturn(true);
-
-        // When
-        productService.deleteProduct(1L);
-
-        // Then
-        verify(productRepository, times(1)).deleteById(1L);
-        // No exception means success
-    }
-
-    @Test
-    @DisplayName("Should throw exception if product not found for delete")
-    void deleteProduct_shouldThrowExceptionWhenNotFound() {
-        // Given
-        when(productRepository.deleteById(99L)).thenReturn(false);
-
-        // When & Then
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-                () -> productService.deleteProduct(99L));
-
-        assertEquals("404 NOT_FOUND \"Product not found with id: 99\"", exception.getMessage());
-        verify(productRepository, times(1)).deleteById(99L);
-    }
-}
-@@@@
-**Explanation:**
-*   **`@ExtendWith(MockitoExtension.class)`**: Integrates Mockito with JUnit 5.
-*   **`@Mock`**: Creates a mock object of `ProductRepository`. This allows you to define how the repository behaves without actually interacting with its real implementation.
-*   **`@InjectMocks`**: Creates an instance of `ProductService` and injects the `@Mock` dependencies into it.
-*   **`@BeforeEach`**: Ensures that `product1` and `product2` are re-initialized before each test.
-*   **`when().thenReturn()`**: Mockito syntax to define the behavior of mocked methods.
-*   **`verify().times(n)`**: Verifies that a specific method on the mock was called a certain number of times.
-*   **`assertThrows()`**: JUnit 5 assertion to check if a specific exception is thrown.
-*   These tests cover successful operations and error scenarios (e.g., product not found).
-
----
-
-#### 9. Controller Unit Test
-
-Tests the `ProductController` endpoints, mocking the `ProductService` layer. Uses `MockMvc` to simulate HTTP requests.
-
-$$$$ src/test/java/com/example/demo/controller
-&&&& ProductControllerTest.java
-@@@@
-package com.example.demo.controller;
-
-import com.example.demo.model.Product;
-import com.example.demo.service.ProductService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.server.ResponseStatusException;
-
-import java.util.Arrays;
-import java.util.List;
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * Unit tests for the ProductController.
- * Uses @WebMvcTest to test the controller layer in isolation,
- * mocking the ProductService dependency.
- */
-@WebMvcTest(ProductController.class) // Focuses Spring Boot tests on ProductController
-class ProductControllerTest {
+@ExtendWith(MockitoExtension.class)
+class KafkaProducerServiceTest {
 
-    @Autowired
-    private MockMvc mockMvc; // Used to perform HTTP requests in tests
+    @Mock
+    private KafkaTemplate<String, Message> kafkaTemplate;
 
-    @MockBean // Creates a mock instance of ProductService and adds it to the Spring context
-    private ProductService productService;
+    @InjectMocks
+    private KafkaProducerService kafkaProducerService;
 
-    @Autowired
-    private ObjectMapper objectMapper; // For converting objects to/from JSON
+    @Captor
+    private ArgumentCaptor<Message> messageCaptor;
 
-    private Product product1;
-    private Product product2;
+    private final String TOPIC = "test-topic";
 
     @BeforeEach
     void setUp() {
-        product1 = new Product(1L, "Laptop", 1200.00);
-        product2 = new Product(2L, "Mouse", 25.00);
+        // Set the topic name via reflection or a setter if it's private and no constructor injection
+        // For simplicity, if @Value is used, we can directly set it here for test
+        // In a real scenario, you might have a test config for @Value or use constructor injection
+        try {
+            java.lang.reflect.Field topicNameField = KafkaProducerService.class.getDeclaredField("topicName");
+            topicNameField.setAccessible(true);
+            topicNameField.set(kafkaProducerService, TOPIC);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+
+        // Mock the return of kafkaTemplate.send() to immediately complete successfully
+        SettableListenableFuture<SendResult<String, Message>> future = new SettableListenableFuture<>();
+        future.set(mock(SendResult.class)); // Just return a mocked SendResult
+        when(kafkaTemplate.send(anyString(), anyString(), any(Message.class))).thenReturn(future);
     }
 
     @Test
-    @DisplayName("GET /api/products - Should return all products")
-    void getAllProducts_shouldReturnAllProducts() throws Exception {
-        // Given
-        List<Product> products = Arrays.asList(product1, product2);
-        when(productService.getAllProducts()).thenReturn(products);
+    void testSendMessage() {
+        String key = "testKey";
+        String content = "Test message content";
 
-        // When & Then
-        mockMvc.perform(get("/api/products")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk()) // Expect HTTP 200 OK
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].id").value(1L))
-                .andExpect(jsonPath("$[0].name").value("Laptop"))
-                .andExpect(jsonPath("$[1].id").value(2L))
-                .andExpect(jsonPath("$[1].name").value("Mouse"));
+        kafkaProducerService.sendMessage(key, content);
 
-        verify(productService, times(1)).getAllProducts();
-    }
+        // Verify that kafkaTemplate.send was called exactly once
+        verify(kafkaTemplate, times(1)).send(eq(TOPIC), eq(key), messageCaptor.capture());
 
-    @Test
-    @DisplayName("GET /api/products/{id} - Should return product by ID")
-    void getProductById_shouldReturnProduct() throws Exception {
-        // Given
-        when(productService.getProductById(1L)).thenReturn(product1);
-
-        // When & Then
-        mockMvc.perform(get("/api/products/{id}", 1L)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk()) // Expect HTTP 200 OK
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Laptop"))
-                .andExpect(jsonPath("$.price").value(1200.00));
-
-        verify(productService, times(1)).getProductById(1L);
-    }
-
-    @Test
-    @DisplayName("GET /api/products/{id} - Should return 404 if product not found")
-    void getProductById_shouldReturnNotFound() throws Exception {
-        // Given
-        when(productService.getProductById(99L))
-                .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Product not found"));
-
-        // When & Then
-        mockMvc.perform(get("/api/products/{id}", 99L)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound()) // Expect HTTP 404 Not Found
-                .andExpect(jsonPath("$.status").value(404));
-
-        verify(productService, times(1)).getProductById(99L);
-    }
-
-    @Test
-    @DisplayName("POST /api/products - Should create a new product")
-    void createProduct_shouldCreateProduct() throws Exception {
-        // Given
-        Product newProduct = new Product(null, "Keyboard", 75.00);
-        Product savedProduct = new Product(3L, "Keyboard", 75.00);
-        when(productService.createProduct(any(Product.class))).thenReturn(savedProduct);
-
-        // When & Then
-        mockMvc.perform(post("/api/products")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(newProduct)))
-                .andExpect(status().isCreated()) // Expect HTTP 201 Created
-                .andExpect(jsonPath("$.id").value(3L))
-                .andExpect(jsonPath("$.name").value("Keyboard"))
-                .andExpect(jsonPath("$.price").value(75.00));
-
-        verify(productService, times(1)).createProduct(any(Product.class));
-    }
-
-    @Test
-    @DisplayName("PUT /api/products/{id} - Should update an existing product")
-    void updateProduct_shouldUpdateProduct() throws Exception {
-        // Given
-        Product updatedDetails = new Product(null, "Updated Laptop", 1300.00); // ID will be ignored by service
-        Product updatedProduct = new Product(1L, "Updated Laptop", 1300.00);
-        when(productService.updateProduct(eq(1L), any(Product.class))).thenReturn(updatedProduct);
-
-        // When & Then
-        mockMvc.perform(put("/api/products/{id}", 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedDetails)))
-                .andExpect(status().isOk()) // Expect HTTP 200 OK
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Updated Laptop"))
-                .andExpect(jsonPath("$.price").value(1300.00));
-
-        verify(productService, times(1)).updateProduct(eq(1L), any(Product.class));
-    }
-
-    @Test
-    @DisplayName("PUT /api/products/{id} - Should return 404 if product not found for update")
-    void updateProduct_shouldReturnNotFound() throws Exception {
-        // Given
-        Product updatedDetails = new Product(null, "NonExistent Product", 100.00);
-        when(productService.updateProduct(eq(99L), any(Product.class)))
-                .thenThrow(new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Product not found"));
-
-        // When & Then
-        mockMvc.perform(put("/api/products/{id}", 99L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedDetails)))
-                .andExpect(status().isNotFound()) // Expect HTTP 404 Not Found
-                .andExpect(jsonPath("$.status").value(404));
-
-        verify(productService, times(1)).updateProduct(eq(99L), any(Product.class));
-    }
-
-    @Test
-    @DisplayName("DELETE /api/products/{id} - Should delete a product")
-    void deleteProduct_shouldDeleteProduct() throws Exception {
-        // Given
-        doNothing().when(productService).deleteProduct(1L); // Mock void method
-
-        // When & Then
-        mockMvc.perform(delete("/api/products/{id}", 1L))
-                .andExpect(status().isNoContent()); // Expect HTTP 204 No Content
-
-        verify(productService, times(1)).deleteProduct(1L);
-    }
-
-    @Test
-    @DisplayName("DELETE /api/products/{id} - Should return 404 if product not found for delete")
-    void deleteProduct_shouldReturnNotFound() throws Exception {
-        // Given
-        doThrow(new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Product not found"))
-                .when(productService).deleteProduct(99L);
-
-        // When & Then
-        mockMvc.perform(delete("/api/products/{id}", 99L))
-                .andExpect(status().isNotFound()) // Expect HTTP 404 Not Found
-                .andExpect(jsonPath("$.status").value(404));
-
-        verify(productService, times(1)).deleteProduct(99L);
+        // Assert on the captured message object
+        Message sentMessage = messageCaptor.getValue();
+        assertNotNull(sentMessage);
+        assertEquals(content, sentMessage.getContent());
+        assertNotNull(sentMessage.getTimestamp());
+        
+        // Also verify the future completion was handled (though the actual completion logic is in the service)
+        // For unit tests, we're primarily checking method invocation and arguments.
     }
 }
 @@@@
 **Explanation:**
-*   **`@WebMvcTest(ProductController.class)`**: Configures a Spring application context with only the beans relevant for testing an MVC controller. It will auto-configure `MockMvc`, Jackson `ObjectMapper`, etc., but won't load the full application context.
-*   **`@Autowired MockMvc mockMvc`**: Injects `MockMvc`, which is used to send HTTP requests to the controller.
-*   **`@MockBean ProductService productService`**: Creates a mock of `ProductService` and adds it to the Spring context, replacing the real `ProductService` instance that the `ProductController` would normally depend on.
-*   **`@Autowired ObjectMapper objectMapper`**: Used to serialize Java objects to JSON strings for request bodies and deserialize JSON responses.
-*   **`mockMvc.perform(...)`**: Initiates a request to a controller.
-*   **`andExpect(status().isOk())`, `andExpect(jsonPath("$.id").value(1L))`**: Assertions to check the HTTP status code and the JSON response body. `jsonPath` allows you to navigate and assert values within the JSON response.
-*   **`doNothing().when()` / `doThrow().when()`**: Mockito syntax for defining behavior for `void` methods or throwing exceptions.
+*   **`@ExtendWith(MockitoExtension.class)`**: Enables Mockito annotations for JUnit 5.
+*   **`@Mock private KafkaTemplate<String, Message> kafkaTemplate`**: Creates a mock instance of `KafkaTemplate`.
+*   **`@InjectMocks private KafkaProducerService kafkaProducerService`**: Injects the mocked `KafkaTemplate` into `KafkaProducerService`.
+*   **`@Captor private ArgumentCaptor<Message> messageCaptor`**: Used to capture the `Message` argument passed to `kafkaTemplate.send()` for verification.
+*   **`setUp()`**: Initializes the `topicName` field in the service (since it's typically injected via `@Value`) and mocks the `kafkaTemplate.send()` method to return an immediately completed `ListenableFuture`. This prevents actual Kafka communication during the unit test.
+*   **`testSendMessage()`**:
+    *   Calls `kafkaProducerService.sendMessage()`.
+    *   **`verify(kafkaTemplate, times(1)).send(eq(TOPIC), eq(key), messageCaptor.capture())`**: Verifies that the `send` method of `kafkaTemplate` was called exactly once with the correct topic, key, and captures the `Message` object.
+    *   Assertions check the content and timestamp of the captured `Message` object.
 
 ---
 
-### How to Run This Template:
+#### 11. `test/listener/KafkaConsumerListenerTest.java` (Consumer Listener Unit Test)
 
-1.  **Save the files**: Place each code block into the corresponding folder structure.
-2.  **Open in IDE**: Import the project into an IDE like IntelliJ IDEA or Eclipse as a Maven project.
-3.  **Run `DemoApplication.java`**: Right-click on `DemoApplication.java` and choose "Run".
-4.  **Access the API**:
-    *   Open your browser or an API client (like Postman or Insomnia).
-    *   **GET all products**: `http://localhost:8080/api/products` (Initially, it will be empty)
-    *   **POST a new product**: `http://localhost:8080/api/products`
-        *   Method: `POST`
-        *   Body (raw, JSON):
-            ```json
-            {
-                "name": "Smartphone",
-                "price": 699.99
-            }
-            ```
-    *   **GET product by ID**: `http://localhost:8080/api/products/1` (Replace `1` with the actual ID returned from the POST)
-    *   **PUT to update product**: `http://localhost:8080/api/products/1`
-        *   Method: `PUT`
-        *   Body (raw, JSON):
-            ```json
-            {
-                "name": "iPhone 15",
-                "price": 799.00
-            }
-            ```
-    *   **DELETE product**: `http://localhost:8080/api/products/1`
-        *   Method: `DELETE`
+Unit test for `KafkaConsumerListener`, directly invoking the listener method.
 
-5.  **Run Tests**: In your IDE, right-click on `src/test/java` and select "Run Tests" to execute all unit tests.
+`$$$$ src/test/java/com/example/kafka/listener`
+`&&&& KafkaConsumerListenerTest.java`
+`@@@@
+package com.example.kafka.listener;
 
-This complete template provides a solid foundation for building Spring Boot REST APIs with good practices and testing coverage!
+import com.example.kafka.model.Message;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mockito;
+import org.springframework.kafka.support.Acknowledgment;
+
+import java.time.LocalDateTime;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.verify;
+
+class KafkaConsumerListenerTest {
+
+    private KafkaConsumerListener kafkaConsumerListener;
+
+    @Captor
+    private ArgumentCaptor<String> logMessageCaptor; // To capture log messages for verification
+
+    private Acknowledgment acknowledgment; // Mock Acknowledgment
+
+    @BeforeEach
+    void setUp() {
+        // We initialize the listener directly as it has no dependencies for simple unit test
+        kafkaConsumerListener = new KafkaConsumerListener();
+        acknowledgment = Mockito.mock(Acknowledgment.class); // Mock Acknowledgment
+
+        // Mock static Slf4j logger for capturing log output if needed, though for this simple test it's not strictly necessary.
+        // For more advanced logger mocking, consider libraries like LogCaptor or AOP.
+    }
+
+    @Test
+    void testListenWithMessage() {
+        String testContent = "Hello from Kafka test!";
+        LocalDateTime testTimestamp = LocalDateTime.now().minusMinutes(5); // Example timestamp
+        Message testMessage = new Message(testContent, testTimestamp);
+
+        // Call the listener method directly
+        kafkaConsumerListener.listen(testMessage, acknowledgment);
+
+        // Verify that acknowledge() was called
+        verify(acknowledgment).acknowledge();
+
+        // For a more robust test, you might want to capture and verify log messages
+        // This usually requires a separate logging test setup or mocking the logger directly.
+        // For this simple case, we trust the log.info() call would happen.
+    }
+
+    @Test
+    void testListenWithDifferentMessageContent() {
+        String differentContent = "Another message!";
+        LocalDateTime differentTimestamp = LocalDateTime.now();
+        Message differentMessage = new Message(differentContent, differentTimestamp);
+
+        kafkaConsumerListener.listen(differentMessage, acknowledgment);
+
+        verify(acknowledgment).acknowledge();
+    }
+}
+@@@@
+**Explanation:**
+*   This is a pure unit test for `KafkaConsumerListener`. It does not require an embedded Kafka broker.
+*   We directly instantiate `KafkaConsumerListener` because it has no direct dependencies injected via its constructor that we need to mock for its `listen` method.
+*   **`Acknowledgment acknowledgment`**: A mock `Acknowledgment` object is created and passed to the `listen` method.
+*   **`testListenWithMessage()`**:
+    *   A `Message` object is created.
+    *   The `kafkaConsumerListener.listen()` method is called directly with the test message and the mocked `Acknowledgment`.
+    *   **`verify(acknowledgment).acknowledge()`**: We verify that the `acknowledge()` method on the mocked `Acknowledgment` was called. This confirms that our listener correctly processed the message and attempted to acknowledge it.
+
+**Note on Consumer Unit Testing:**
+For a comprehensive *integration test* of the consumer, you would typically use Spring Boot's `@EmbeddedKafka` to spin up an in-memory Kafka broker, then send messages to it via a `KafkaTemplate`, and finally verify that the `@KafkaListener` correctly receives and processes those messages. The above unit test focuses on the listener method's internal logic, independent of the Kafka infrastructure.
+
+---
+
+### How to Run This Application
+
+1.  **Ensure Kafka is Running:** Make sure your Kafka broker and Zookeeper are running (e.g., using Docker or a local installation). The `bootstrap-servers` in `application.properties` should point to your Kafka instance (default is `localhost:9092`).
+2.  **Compile and Run:**
+    *   Open a terminal in your project's root directory.
+    *   Run `mvn clean install` to build the project.
+    *   Run `mvn spring-boot:run` to start the Spring Boot application.
+3.  **Send a Message (Producer):**
+    *   Once the application starts, open your browser or use `curl` or Postman to send a POST request:
+        ```bash
+        curl -X POST "http://localhost:8080/kafka/publish?message=Hello%20Kafka%20from%20Spring%20Boot!&key=myKey"
+        ```
+    *   You should see a `Message sent to Kafka successfully` response.
+4.  **Observe Consumer Output:**
+    *   Look at the console where your Spring Boot application is running. You should see a log message from the `KafkaConsumerListener` indicating that it received the message:
+        ```
+        Received message: Hello Kafka from Spring Boot! at 2024-05-15T10:30:00.123
+        ```
+5.  **Run Unit Tests:**
+    *   From your project's root directory: `mvn test`
+
+This template provides a solid foundation for building Kafka-enabled microservices with Spring Boot! Feel free to customize the `Message` model, add more complex business logic, or integrate with other Spring features.
