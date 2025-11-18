@@ -1,9 +1,9 @@
 package com.example.demo.service;
 
-import com.example.demo.exception.ProductNotFoundException;
 import com.example.demo.model.Product;
 import com.example.demo.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -17,122 +17,180 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class) // Initializes Mockito mocks
+/**
+ * Unit tests for the ProductService.
+ * Uses Mockito to mock the ProductRepository dependency.
+ *
+ * @ExtendWith(MockitoExtension.class): Integrates Mockito with JUnit 5.
+ */
+@ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
 
-    @Mock // Creates a mock instance of ProductRepository
+    // Mock the ProductRepository dependency
+    @Mock
     private ProductRepository productRepository;
 
-    @InjectMocks // Injects the mocks into ProductService
+    // Inject mocks into ProductService instance
+    @InjectMocks
     private ProductService productService;
 
     private Product product1;
     private Product product2;
 
-    @BeforeEach // Runs before each test method
+    /**
+     * Set up common test data before each test method runs.
+     */
+    @BeforeEach
     void setUp() {
-        product1 = new Product(1L, "Laptop", 1200.00, "Powerful laptop for work and gaming");
-        product2 = new Product(2L, "Mouse", 25.00, "Ergonomic wireless mouse");
+        product1 = new Product(1L, "Laptop", 1200.00, "Powerful laptop");
+        product2 = new Product(2L, "Mouse", 25.00, "Wireless mouse");
     }
 
     @Test
-    void testGetAllProducts() {
-        when(productRepository.findAll()).thenReturn(Arrays.asList(product1, product2));
+    @DisplayName("Should return all products")
+    void getAllProducts_shouldReturnAllProducts() {
+        // Arrange
+        List<Product> products = Arrays.asList(product1, product2);
+        when(productRepository.findAll()).thenReturn(products);
 
-        List<Product> products = productService.getAllProducts();
+        // Act
+        List<Product> result = productService.getAllProducts();
 
-        assertNotNull(products);
-        assertEquals(2, products.size());
-        assertEquals("Laptop", products.get(0).getName());
-        verify(productRepository, times(1)).findAll(); // Verifies that findAll was called once
+        // Assert
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(product1.getName(), result.get(0).getName());
+        assertEquals(product2.getName(), result.get(1).getName());
+        verify(productRepository, times(1)).findAll(); // Verify findAll was called once
     }
 
     @Test
-    void testGetProductByIdFound() {
+    @DisplayName("Should return product by ID when found")
+    void getProductById_shouldReturnProduct_whenFound() {
+        // Arrange
         when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
 
-        Product foundProduct = productService.getProductById(1L);
+        // Act
+        Optional<Product> result = productService.getProductById(1L);
 
-        assertNotNull(foundProduct);
-        assertEquals("Laptop", foundProduct.getName());
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals(product1.getName(), result.get().getName());
         verify(productRepository, times(1)).findById(1L);
     }
 
     @Test
-    void testGetProductByIdNotFound() {
+    @DisplayName("Should return empty optional when product by ID not found")
+    void getProductById_shouldReturnEmptyOptional_whenNotFound() {
+        // Arrange
         when(productRepository.findById(3L)).thenReturn(Optional.empty());
 
-        Exception exception = assertThrows(ProductNotFoundException.class, () -> {
-            productService.getProductById(3L);
-        });
+        // Act
+        Optional<Product> result = productService.getProductById(3L);
 
-        String expectedMessage = "Product not found with id: 3";
-        String actualMessage = exception.getMessage();
-        assertTrue(actualMessage.contains(expectedMessage));
+        // Assert
+        assertFalse(result.isPresent());
         verify(productRepository, times(1)).findById(3L);
     }
 
     @Test
-    void testCreateProduct() {
-        when(productRepository.save(any(Product.class))).thenReturn(product1);
+    @DisplayName("Should create a new product successfully")
+    void createProduct_shouldCreateProduct_whenNameDoesNotExist() {
+        // Arrange
+        Product newProduct = new Product(null, "Keyboard", 75.00, "Mechanical keyboard");
+        when(productRepository.findByName(newProduct.getName())).thenReturn(Optional.empty());
+        when(productRepository.save(newProduct)).thenReturn(new Product(3L, "Keyboard", 75.00, "Mechanical keyboard"));
 
-        Product createdProduct = productService.createProduct(product1);
+        // Act
+        Product createdProduct = productService.createProduct(newProduct);
 
+        // Assert
         assertNotNull(createdProduct);
-        assertEquals("Laptop", createdProduct.getName());
-        verify(productRepository, times(1)).save(product1);
+        assertEquals(3L, createdProduct.getId());
+        assertEquals("Keyboard", createdProduct.getName());
+        verify(productRepository, times(1)).findByName("Keyboard");
+        verify(productRepository, times(1)).save(newProduct);
     }
 
     @Test
-    void testUpdateProductFound() {
-        Product updatedDetails = new Product(1L, "Gaming Laptop", 1500.00, "High-performance gaming laptop");
+    @DisplayName("Should throw IllegalArgumentException when creating product with existing name")
+    void createProduct_shouldThrowException_whenNameExists() {
+        // Arrange
+        Product newProduct = new Product(null, "Laptop", 1500.00, "Gaming laptop"); // Name 'Laptop' already exists (product1)
+        when(productRepository.findByName(newProduct.getName())).thenReturn(Optional.of(product1)); // Simulate existing product
+
+        // Act & Assert
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
+            productService.createProduct(newProduct);
+        });
+        assertEquals("Product with name 'Laptop' already exists.", thrown.getMessage());
+        verify(productRepository, times(1)).findByName("Laptop");
+        verify(productRepository, never()).save(any(Product.class)); // Verify save was NOT called
+    }
+
+    @Test
+    @DisplayName("Should update an existing product when found")
+    void updateProduct_shouldUpdateProduct_whenFound() {
+        // Arrange
+        Product updatedDetails = new Product(1L, "Laptop Pro", 1300.00, "Updated powerful laptop");
         when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
         when(productRepository.save(any(Product.class))).thenReturn(updatedDetails); // Mock save returns the updated product
 
-        Product result = productService.updateProduct(1L, updatedDetails);
+        // Act
+        Optional<Product> result = productService.updateProduct(1L, updatedDetails);
 
-        assertNotNull(result);
-        assertEquals("Gaming Laptop", result.getName());
-        assertEquals(1500.00, result.getPrice());
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals("Laptop Pro", result.get().getName());
+        assertEquals(1300.00, result.get().getPrice());
         verify(productRepository, times(1)).findById(1L);
         verify(productRepository, times(1)).save(any(Product.class));
     }
 
     @Test
-    void testUpdateProductNotFound() {
-        Product updatedDetails = new Product(3L, "Non-existent Product", 100.00, "Description");
+    @DisplayName("Should return empty optional when updating non-existent product")
+    void updateProduct_shouldReturnEmptyOptional_whenNotFound() {
+        // Arrange
+        Product updatedDetails = new Product(3L, "NonExistent", 100.00, "Non-existent product");
         when(productRepository.findById(3L)).thenReturn(Optional.empty());
 
-        Exception exception = assertThrows(ProductNotFoundException.class, () -> {
-            productService.updateProduct(3L, updatedDetails);
-        });
+        // Act
+        Optional<Product> result = productService.updateProduct(3L, updatedDetails);
 
-        assertTrue(exception.getMessage().contains("Product not found with id: 3"));
+        // Assert
+        assertFalse(result.isPresent());
         verify(productRepository, times(1)).findById(3L);
-        verify(productRepository, never()).save(any(Product.class)); // Ensure save is not called
+        verify(productRepository, never()).save(any(Product.class)); // Verify save was NOT called
     }
 
     @Test
-    void testDeleteProductFound() {
-        when(productRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(productRepository).deleteById(1L);
+    @DisplayName("Should delete a product successfully when found")
+    void deleteProduct_shouldDeleteProduct_whenFound() {
+        // Arrange
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
+        doNothing().when(productRepository).delete(product1); // Mock void method
 
-        productService.deleteProduct(1L);
+        // Act
+        boolean result = productService.deleteProduct(1L);
 
-        verify(productRepository, times(1)).existsById(1L);
-        verify(productRepository, times(1)).deleteById(1L);
+        // Assert
+        assertTrue(result);
+        verify(productRepository, times(1)).findById(1L);
+        verify(productRepository, times(1)).delete(product1);
     }
 
     @Test
-    void testDeleteProductNotFound() {
-        when(productRepository.existsById(3L)).thenReturn(false);
+    @DisplayName("Should return false when deleting non-existent product")
+    void deleteProduct_shouldReturnFalse_whenNotFound() {
+        // Arrange
+        when(productRepository.findById(3L)).thenReturn(Optional.empty());
 
-        Exception exception = assertThrows(ProductNotFoundException.class, () -> {
-            productService.deleteProduct(3L);
-        });
+        // Act
+        boolean result = productService.deleteProduct(3L);
 
-        assertTrue(exception.getMessage().contains("Product not found with id: 3"));
-        verify(productRepository, times(1)).existsById(3L);
-        verify(productRepository, never()).deleteById(anyLong()); // Ensure deleteById is not called
+        // Assert
+        assertFalse(result);
+        verify(productRepository, times(1)).findById(3L);
+        verify(productRepository, never()).delete(any(Product.class)); // Verify delete was NOT called
     }
 }

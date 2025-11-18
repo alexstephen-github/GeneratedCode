@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.5</version> <!-- Use the latest stable Spring Boot version -->
+        <version>3.2.5</version> <!-- Use a recent stable Spring Boot version -->
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.example</groupId>
@@ -15,34 +15,27 @@
     <description>Demo project for Spring Boot REST API</description>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>17</java.version> <!-- Use Java 17 or higher -->
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Web Starter for building RESTful applications -->
+        <!-- Spring Boot Web Starter for building RESTful APIs -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Spring Data JPA Starter for database interaction -->
+        <!-- Spring Boot Data JPA Starter for database interaction -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- H2 Database for in-memory database testing and development -->
+        <!-- H2 Database - In-memory database, great for development and testing -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
-        </dependency>
-
-        <!-- Lombok to reduce boilerplate code (getters, setters, constructors) -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
         </dependency>
 
         <!-- Spring Boot Test Starter for unit and integration testing -->
@@ -52,17 +45,17 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Mockito for mocking dependencies in unit tests -->
+        <!-- Lombok for reducing boilerplate code (getters, setters, constructors) -->
+        <!-- Add this if you want to use Lombok. Remember to install Lombok plugin in your IDE. -->
         <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <!-- Spring Boot Maven Plugin for packaging and running the application -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

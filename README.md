@@ -1,9 +1,8 @@
-Hello there! I'd be glad to help you with a comprehensive code template for a Spring Boot REST API. This template includes a basic CRUD (Create, Read, Update, Delete) functionality for a `Product` entity, along with best practices like a layered architecture, exception handling, and unit tests.
+Here's a comprehensive code template for a Spring Boot REST API, including typical layers, unit tests, and explanations. We'll create a simple API for managing `Product` resources.
 
-Here's the code template:
+### 1. Project Setup (pom.xml)
 
-#### Project Setup (`pom.xml`)
-This `pom.xml` includes essential dependencies for Spring Boot Web, Spring Data JPA, H2 Database (for in-memory testing), Lombok (for boilerplate reduction), and testing libraries.
+This `pom.xml` includes essential dependencies for a Spring Boot REST API: `spring-boot-starter-web` for building web applications, `spring-boot-starter-data-jpa` for database interaction, `h2` as an in-memory database for quick setup and testing, and `spring-boot-starter-test` for testing.
 
 $$$$
 &&&& pom.xml
@@ -15,7 +14,7 @@ $$$$
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.5</version> <!-- Use the latest stable Spring Boot version -->
+        <version>3.2.5</version> <!-- Use a recent stable Spring Boot version -->
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.example</groupId>
@@ -25,34 +24,27 @@ $$$$
     <description>Demo project for Spring Boot REST API</description>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>17</java.version> <!-- Use Java 17 or higher -->
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Web Starter for building RESTful applications -->
+        <!-- Spring Boot Web Starter for building RESTful APIs -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Spring Data JPA Starter for database interaction -->
+        <!-- Spring Boot Data JPA Starter for database interaction -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- H2 Database for in-memory database testing and development -->
+        <!-- H2 Database - In-memory database, great for development and testing -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
-        </dependency>
-
-        <!-- Lombok to reduce boilerplate code (getters, setters, constructors) -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
         </dependency>
 
         <!-- Spring Boot Test Starter for unit and integration testing -->
@@ -62,17 +54,17 @@ $$$$
             <scope>test</scope>
         </dependency>
 
-        <!-- Mockito for mocking dependencies in unit tests -->
+        <!-- Lombok for reducing boilerplate code (getters, setters, constructors) -->
+        <!-- Add this if you want to use Lombok. Remember to install Lombok plugin in your IDE. -->
         <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <!-- Spring Boot Maven Plugin for packaging and running the application -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -91,351 +83,19 @@ $$$$
 </project>
 @@@@
 **Explanation:**
-*   `spring-boot-starter-web`: Provides all necessary dependencies to build web applications, including RESTful services.
-*   `spring-boot-starter-data-jpa`: Simplifies database access using JPA (Java Persistence API) and Hibernate.
-*   `h2`: An in-memory database, perfect for development and testing without needing a full database setup.
-*   `lombok`: A library that automatically generates boilerplate code like getters, setters, constructors, and `equals`/`hashCode` methods, making your POJOs much cleaner.
-*   `spring-boot-starter-test`: Includes JUnit, Mockito, and Spring Test for writing comprehensive tests.
+*   **`parent`**: Inherits from Spring Boot's parent POM for dependency management and plugin configuration.
+*   **`dependencies`**:
+    *   `spring-boot-starter-web`: Provides all necessary components for building REST APIs (Spring MVC, Tomcat embedded server, Jackson for JSON parsing).
+    *   `spring-boot-starter-data-jpa`: Simplifies database access with Spring Data JPA and Hibernate.
+    *   `h2`: An in-memory database, perfect for development and testing as it doesn't require a separate database server.
+    *   `spring-boot-starter-test`: Contains utilities for testing Spring Boot applications (JUnit, Mockito, Spring Test).
+    *   `lombok`: (Optional but highly recommended) Reduces boilerplate code like getters, setters, constructors, etc., using annotations. Make sure to install the Lombok plugin in your IDE.
 
 ---
 
-### **1. Main Application Class**
+### 2. Application Configuration
 
-This is the entry point of your Spring Boot application.
-
-$$$$ src/main/java/com/example/demo
-&&&& DemoApplication.java
-@@@@
-package com.example.demo;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class DemoApplication {
-
-    public static void main(String[] args) {
-        SpringApplication.run(DemoApplication.class, args);
-    }
-
-}
-@@@@
-**Explanation:**
-*   `@SpringBootApplication`: This annotation combines `@Configuration`, `@EnableAutoConfiguration`, and `@ComponentScan`. It marks a configuration class that starts the auto-configuration process, allowing Spring Boot to guess and configure beans based on your classpath and other settings, and also scans for other components in the package.
-
----
-
-### **2. Model (Entity)**
-
-This defines the data structure for our `Product`. It's a JPA entity that will be mapped to a database table.
-
-$$$$ src/main/java/com/example/demo/model
-&&&& Product.java
-@@@@
-package com.example.demo.model;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Entity // Marks this class as a JPA entity, mapped to a database table
-@Data // Lombok annotation: Generates getters, setters, toString, equals, and hashCode methods
-@NoArgsConstructor // Lombok annotation: Generates a no-argument constructor
-@AllArgsConstructor // Lombok annotation: Generates a constructor with all fields as arguments
-public class Product {
-
-    @Id // Marks this field as the primary key of the entity
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Configures the primary key to be auto-generated by the database
-    private Long id;
-    private String name;
-    private double price;
-    private String description;
-
-    // We can add a custom constructor if needed, or rely on Lombok's @NoArgsConstructor/@AllArgsConstructor
-    // public Product(String name, double price, String description) {
-    //     this.name = name;
-    //     this.price = price;
-    //     this.description = description;
-    // }
-}
-@@@@
-**Explanation:**
-*   `@Entity`: Standard JPA annotation, indicating that this class is an entity and will be mapped to a database table.
-*   `@Id`: Marks the `id` field as the primary key.
-*   `@GeneratedValue(strategy = GenerationType.IDENTITY)`: Configures the primary key to be auto-incremented by the database.
-*   `@Data`, `@NoArgsConstructor`, `@AllArgsConstructor`: Lombok annotations that drastically reduce boilerplate code for getters, setters, constructors, `equals`, `hashCode`, and `toString` methods.
-
----
-
-### **3. Repository Interface**
-
-This interface extends Spring Data JPA's `JpaRepository`, providing ready-to-use CRUD operations without writing any implementation code.
-
-$$$$ src/main/java/com/example/demo/repository
-&&&& ProductRepository.java
-@@@@
-package com.example.demo.repository;
-
-import com.example.demo.model.Product;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import java.util.Optional;
-
-@Repository // Optional: Indicates that this interface is a "Repository", useful for clarity and component scanning
-public interface ProductRepository extends JpaRepository<Product, Long> {
-    // JpaRepository provides methods like save(), findById(), findAll(), deleteById(), etc.
-    // You can add custom query methods here, e.g.:
-    Optional<Product> findByName(String name);
-}
-@@@@
-**Explanation:**
-*   `JpaRepository<Product, Long>`: Inherits a rich set of methods for CRUD operations on `Product` entities, where `Long` is the type of the primary key.
-*   `findByName(String name)`: An example of a custom query method. Spring Data JPA can automatically generate the implementation for such methods based on their name.
-
----
-
-### **4. Service Layer**
-
-The service layer contains the business logic. It orchestrates interactions between the controller and the repository, providing a clean API for performing operations on `Product` entities.
-
-$$$$ src/main/java/com/example/demo/service
-&&&& ProductService.java
-@@@@
-package com.example.demo.service;
-
-import com.example.demo.exception.ProductNotFoundException;
-import com.example.demo.model.Product;
-import com.example.demo.repository.ProductRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Optional;
-
-@Service // Marks this class as a Spring Service component
-public class ProductService {
-
-    private final ProductRepository productRepository;
-
-    @Autowired // Injects ProductRepository instance
-    public ProductService(ProductRepository productRepository) {
-        this.productRepository = productRepository;
-    }
-
-    @Transactional(readOnly = true) // Improves performance for read operations
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
-    }
-
-    @Transactional(readOnly = true)
-    public Product getProductById(Long id) {
-        return productRepository.findById(id)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
-    }
-
-    @Transactional // Ensures atomicity for write operations
-    public Product createProduct(Product product) {
-        // You can add business logic here, e.g., validate product data
-        return productRepository.save(product);
-    }
-
-    @Transactional
-    public Product updateProduct(Long id, Product productDetails) {
-        Product existingProduct = productRepository.findById(id)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
-
-        existingProduct.setName(productDetails.getName());
-        existingProduct.setPrice(productDetails.getPrice());
-        existingProduct.setDescription(productDetails.getDescription());
-
-        // You can add more validation or business logic here
-        return productRepository.save(existingProduct);
-    }
-
-    @Transactional
-    public void deleteProduct(Long id) {
-        if (!productRepository.existsById(id)) {
-            throw new ProductNotFoundException("Product not found with id: " + id);
-        }
-        productRepository.deleteById(id);
-    }
-}
-@@@@
-**Explanation:**
-*   `@Service`: Annotates this class as a Spring service, making it a candidate for component scanning.
-*   `@Autowired`: Used for dependency injection. Spring automatically provides an instance of `ProductRepository`. Using constructor injection (as shown) is generally recommended.
-*   `@Transactional`: Ensures that methods are executed within a database transaction. If an exception occurs, the transaction can be rolled back, maintaining data integrity. `readOnly = true` is an optimization for methods that only read data.
-*   Error Handling: Uses `orElseThrow` to throw a custom `ProductNotFoundException` if a product is not found, providing clearer error messages.
-
----
-
-#### **5. Custom Exception**
-
-A dedicated exception for when a product is not found.
-
-$$$$ src/main/java/com/example/demo/exception
-&&&& ProductNotFoundException.java
-@@@@
-package com.example.demo.exception;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
-
-@ResponseStatus(HttpStatus.NOT_FOUND) // Sets the HTTP status code to 404 Not Found when this exception is thrown
-public class ProductNotFoundException extends RuntimeException {
-
-    public ProductNotFoundException(String message) {
-        super(message);
-    }
-
-    public ProductNotFoundException(String message, Throwable cause) {
-        super(message, cause);
-    }
-}
-@@@@
-**Explanation:**
-*   `@ResponseStatus(HttpStatus.NOT_FOUND)`: When this exception is thrown from a controller, Spring will automatically return an HTTP 404 (Not Found) status code.
-
----
-
-#### **6. Global Exception Handler**
-
-This class centralizes exception handling across all controllers.
-
-$$$$ src/main/java/com/example/demo/exception
-&&&& GlobalExceptionHandler.java
-@@@@
-package com.example.demo.exception;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.context.request.WebRequest;
-
-import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-@ControllerAdvice // Enables this class to handle exceptions across the entire application
-public class GlobalExceptionHandler {
-
-    @ExceptionHandler(ProductNotFoundException.class) // Specifies that this method handles ProductNotFoundException
-    public ResponseEntity<Object> handleProductNotFoundException(
-            ProductNotFoundException ex, WebRequest request) {
-
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.NOT_FOUND.value());
-        body.put("error", "Not Found");
-        body.put("message", ex.getMessage());
-        body.put("path", request.getDescription(false).replace("uri=", "")); // Extract actual path
-
-        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
-    }
-
-    @ExceptionHandler(Exception.class) // Generic handler for any other unhandled exceptions
-    public ResponseEntity<Object> handleAllUncaughtException(
-            Exception ex, WebRequest request) {
-
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        body.put("error", "Internal Server Error");
-        body.put("message", "An unexpected error occurred: " + ex.getMessage());
-        body.put("path", request.getDescription(false).replace("uri=", ""));
-
-        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-}
-@@@@
-**Explanation:**
-*   `@ControllerAdvice`: A specialization of `@Component` that allows handling exceptions across the whole application, not just an individual controller.
-*   `@ExceptionHandler(ProductNotFoundException.class)`: This method will be invoked whenever a `ProductNotFoundException` is thrown.
-*   `ResponseEntity<Object>`: Provides full control over the HTTP response, including status code, headers, and body.
-*   Custom Error Body: Creates a structured JSON response for errors, including timestamp, status, error message, and path.
-
----
-
-### **7. Controller (REST API Endpoints)**
-
-This class exposes the REST endpoints for `Product` operations.
-
-$$$$ src/main/java/com/example/demo/controller
-&&&& ProductController.java
-@@@@
-package com.example.demo.controller;
-
-import com.example.demo.model.Product;
-import com.example.demo.service.ProductService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-
-@RestController // Marks this class as a REST Controller, handling incoming HTTP requests
-@RequestMapping("/api/products") // Base URL path for all endpoints in this controller
-public class ProductController {
-
-    private final ProductService productService;
-
-    @Autowired // Injects ProductService instance
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
-
-    @GetMapping // Handles GET requests to /api/products
-    public ResponseEntity<List<Product>> getAllProducts() {
-        List<Product> products = productService.getAllProducts();
-        return new ResponseEntity<>(products, HttpStatus.OK); // Returns 200 OK with the list of products
-    }
-
-    @GetMapping("/{id}") // Handles GET requests to /api/products/{id}
-    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
-        Product product = productService.getProductById(id);
-        return new ResponseEntity<>(product, HttpStatus.OK); // Returns 200 OK with the found product
-    }
-
-    @PostMapping // Handles POST requests to /api/products
-    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-        Product createdProduct = productService.createProduct(product);
-        return new ResponseEntity<>(createdProduct, HttpStatus.CREATED); // Returns 201 Created with the new product
-    }
-
-    @PutMapping("/{id}") // Handles PUT requests to /api/products/{id}
-    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product productDetails) {
-        Product updatedProduct = productService.updateProduct(id, productDetails);
-        return new ResponseEntity<>(updatedProduct, HttpStatus.OK); // Returns 200 OK with the updated product
-    }
-
-    @DeleteMapping("/{id}") // Handles DELETE requests to /api/products/{id}
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        productService.deleteProduct(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT); // Returns 204 No Content
-    }
-}
-@@@@
-**Explanation:**
-*   `@RestController`: Combines `@Controller` and `@ResponseBody`. This means that the return value of controller methods should be bound directly to the web response body.
-*   `@RequestMapping("/api/products")`: Sets the base path for all request mappings in this controller.
-*   `@GetMapping`, `@PostMapping`, `@PutMapping`, `@DeleteMapping`: Specific annotations for handling different HTTP methods.
-*   `@PathVariable`: Extracts a value from the URI path.
-*   `@RequestBody`: Maps the HTTP request body to a Java object.
-*   `ResponseEntity`: A generic type that allows full control over the HTTP response, including status code, headers, and body. This is crucial for returning appropriate HTTP statuses (e.g., `200 OK`, `201 Created`, `204 No Content`, `404 Not Found`).
-
----
-
-### **8. Configuration (`application.properties`)**
-
-This file contains application-specific settings, including database configuration.
+`application.properties` for basic settings, especially useful for configuring the in-memory H2 database.
 
 $$$$ src/main/resources
 &&&& application.properties
@@ -453,39 +113,434 @@ spring.datasource.password=password
 
 # JPA/Hibernate Configuration
 spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
-spring.jpa.hibernate.ddl-auto=update # Creates/updates schema automatically. Use 'create' for fresh start, 'none' for production.
-spring.jpa.show-sql=true # Logs SQL statements to the console
-spring.jpa.properties.hibernate.format_sql=true # Formats SQL statements for readability
-
-# Logging configuration (optional, for more detailed logs)
-# logging.level.org.springframework.web=DEBUG
-# logging.level.org.hibernate.SQL=DEBUG
-# logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+spring.jpa.hibernate.ddl-auto=update # Creates/updates schema automatically. Use 'none' or 'validate' in production.
+spring.jpa.show-sql=true # Log SQL queries to console
+spring.jpa.properties.hibernate.format_sql=true # Format logged SQL queries
 @@@@
 **Explanation:**
-*   `server.port`: Specifies the port on which the application will run.
-*   `spring.h2.console.enabled=true`: Enables the H2 database console, accessible at `/h2-console`.
-*   `spring.datasource.url`: Defines the connection URL for the H2 in-memory database. `jdbc:h2:mem:testdb` means an in-memory database named `testdb`.
-*   `spring.jpa.hibernate.ddl-auto=update`: Hibernate (the JPA provider) will automatically update the database schema based on your entities. For production, you'd typically set this to `none` and use migration tools like Flyway or Liquibase.
-*   `spring.jpa.show-sql=true`: Prints SQL queries to the console.
+*   **`server.port`**: Sets the application's port.
+*   **`spring.h2.console.*`**: Enables the H2 database web console, accessible at `http://localhost:8080/h2-console`.
+*   **`spring.datasource.*`**: Configures the H2 in-memory database. `jdbc:h2:mem:testdb` means a database named `testdb` will be created in memory.
+*   **`spring.jpa.hibernate.ddl-auto=update`**: This tells Hibernate to update the database schema based on your JPA entities. For production, you usually set this to `none` or `validate` and manage schema changes with migration tools (e.g., Flyway, Liquibase).
+*   **`spring.jpa.show-sql=true`**: Logs all SQL statements executed by Hibernate, which is very useful for debugging.
 
 ---
 
-### **9. Unit Tests**
+### 3. Main Application Class
 
-#### **ProductService Test**
+The entry point of your Spring Boot application.
 
-Tests the business logic in the `ProductService`. Uses Mockito to mock the `ProductRepository`.
+$$$$ src/main/java/com/example/demo
+&&&& DemoApplication.java
+@@@@
+package com.example.demo;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+/**
+ * Main entry point for the Spring Boot application.
+ * This class uses @SpringBootApplication which is a convenience annotation that adds:
+ * - @Configuration: Tags the class as a source of bean definitions for the application context.
+ * - @EnableAutoConfiguration: Tells Spring Boot to start adding beans based on classpath settings,
+ *   other beans, and various property settings. For example, if spring-webmvc is on the classpath,
+ *   this annotation flags the application as a web application and sets up a DispatcherServlet.
+ * - @ComponentScan: Tells Spring to look for other components, configurations, and services
+ *   in the 'com.example.demo' package, allowing it to find and register controllers, services, etc.
+ */
+@SpringBootApplication
+public class DemoApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(DemoApplication.class, args);
+    }
+
+}
+@@@@
+**Explanation:**
+*   **`@SpringBootApplication`**: This is a convenience annotation that combines `@Configuration`, `@EnableAutoConfiguration`, and `@ComponentScan`. It essentially sets up everything you need for a Spring Boot application.
+*   **`main` method**: Uses `SpringApplication.run()` to bootstrap and launch the Spring application.
+
+---
+
+### 4. Model (Product Entity)
+
+Represents the data structure for a product, mapped to a database table using JPA annotations.
+
+$$$$ src/main/java/com/example/demo/model
+&&&& Product.java
+@@@@
+package com.example.demo.model;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * Represents a Product entity in the application.
+ * This class is mapped to a database table named 'products'.
+ *
+ * @Entity: Marks this class as a JPA entity, meaning it corresponds to a table in the database.
+ * @Table: Specifies the name of the database table for this entity.
+ * @Data: A Lombok annotation to automatically generate getters, setters, toString(), equals(), and hashCode().
+ * @NoArgsConstructor: A Lombok annotation to generate a no-argument constructor.
+ * @AllArgsConstructor: A Lombok annotation to generate a constructor with all fields as arguments.
+ */
+@Entity
+@Table(name = "products")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Product {
+
+    /**
+     * The unique identifier for the product.
+     * @Id: Marks this field as the primary key of the entity.
+     * @GeneratedValue: Specifies how the primary key value is generated.
+     *                  GenerationType.IDENTITY indicates that the database assigns an identity.
+     */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /**
+     * The name of the product. Cannot be null.
+     * @Column: Specifies the mapping of the field to a database column.
+     *          'nullable = false' ensures the column cannot contain null values.
+     */
+    @Column(nullable = false)
+    private String name;
+
+    /**
+     * The price of the product. Cannot be null.
+     */
+    @Column(nullable = false)
+    private Double price;
+
+    /**
+     * The description of the product.
+     */
+    private String description;
+}
+@@@@
+**Explanation:**
+*   **`@Entity`**: Marks this class as a JPA entity, mapping it to a database table.
+*   **`@Table(name = "products")`**: Specifies the table name in the database.
+*   **`@Data`, `@NoArgsConstructor`, `@AllArgsConstructor`**: Lombok annotations to automatically generate boilerplate code (getters, setters, constructors, etc.).
+*   **`@Id`**: Marks `id` as the primary key.
+*   **`@GeneratedValue(strategy = GenerationType.IDENTITY)`**: Configures the primary key to be auto-generated by the database.
+*   **`@Column(nullable = false)`**: Ensures the `name` and `price` columns in the database cannot be null.
+
+---
+
+### 5. Repository Layer
+
+An interface for data access operations, leveraging Spring Data JPA.
+
+$$$$ src/main/java/com/example/demo/repository
+&&&& ProductRepository.java
+@@@@
+package com.example.demo.repository;
+
+import com.example.demo.model.Product;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+/**
+ * Repository interface for Product entities.
+ * Extends JpaRepository to inherit standard CRUD operations and more.
+ * Spring Data JPA automatically provides implementations for these methods at runtime.
+ *
+ * JpaRepository takes two generic parameters:
+ * 1. The entity type (Product)
+ * 2. The type of the entity's primary key (Long)
+ *
+ * @Repository: Stereotype annotation indicating that this is a repository component
+ *              and provides a hint for component-scanning.
+ */
+@Repository
+public interface ProductRepository extends JpaRepository<Product, Long> {
+
+    // You can define custom query methods here if needed.
+    // Spring Data JPA can automatically generate queries based on method names.
+    // Example: Find a product by its name
+    Optional<Product> findByName(String name);
+}
+@@@@
+**Explanation:**
+*   **`@Repository`**: A stereotype annotation that marks this interface as a Spring Data repository, enabling component scanning.
+*   **`extends JpaRepository<Product, Long>`**: This is the core of Spring Data JPA. By extending `JpaRepository`, our `ProductRepository` automatically inherits a rich set of CRUD (Create, Read, Update, Delete) and pagination/sorting methods for the `Product` entity with `Long` as its primary key type.
+*   **`Optional<Product> findByName(String name);`**: An example of a custom query method. Spring Data JPA can derive queries from method names (e.g., `findBy<FieldName>`). `Optional` is used to handle cases where no product is found, preventing `NullPointerException`s.
+
+---
+
+### 6. Service Layer
+
+Contains the business logic for product-related operations.
+
+$$$$ src/main/java/com/example/demo/service
+&&&& ProductService.java
+@@@@
+package com.example.demo.service;
+
+import com.example.demo.model.Product;
+import com.example.demo.repository.ProductRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Service layer for managing Product entities.
+ * This class encapsulates the business logic and acts as an intermediary
+ * between the Controller and the Repository layers.
+ *
+ * @Service: Stereotype annotation indicating that this class is a service component.
+ */
+@Service
+public class ProductService {
+
+    private final ProductRepository productRepository;
+
+    /**
+     * Constructor for ProductService, injecting ProductRepository.
+     * Spring will automatically inject an instance of ProductRepository because of @Autowired
+     * (or implicitly if there's only one constructor).
+     *
+     * @param productRepository The repository for Product entities.
+     */
+    @Autowired
+    public ProductService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
+
+    /**
+     * Retrieves all products.
+     *
+     * @return A list of all products.
+     */
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
+    }
+
+    /**
+     * Retrieves a product by its ID.
+     *
+     * @param id The ID of the product to retrieve.
+     * @return An Optional containing the product if found, or empty if not found.
+     */
+    public Optional<Product> getProductById(Long id) {
+        return productRepository.findById(id);
+    }
+
+    /**
+     * Creates a new product.
+     *
+     * @param product The product object to be created.
+     * @return The created product with its generated ID.
+     */
+    public Product createProduct(Product product) {
+        // Here you might add business logic, validation, etc.
+        // For example, checking if a product with the same name already exists.
+        if (productRepository.findByName(product.getName()).isPresent()) {
+            throw new IllegalArgumentException("Product with name '" + product.getName() + "' already exists.");
+        }
+        return productRepository.save(product);
+    }
+
+    /**
+     * Updates an existing product.
+     *
+     * @param id The ID of the product to update.
+     * @param productDetails The product object containing updated details.
+     * @return An Optional containing the updated product if found, or empty if not found.
+     */
+    public Optional<Product> updateProduct(Long id, Product productDetails) {
+        return productRepository.findById(id)
+                .map(existingProduct -> {
+                    existingProduct.setName(productDetails.getName());
+                    existingProduct.setPrice(productDetails.getPrice());
+                    existingProduct.setDescription(productDetails.getDescription());
+                    return productRepository.save(existingProduct);
+                });
+    }
+
+    /**
+     * Deletes a product by its ID.
+     *
+     * @param id The ID of the product to delete.
+     * @return true if the product was found and deleted, false otherwise.
+     */
+    public boolean deleteProduct(Long id) {
+        return productRepository.findById(id)
+                .map(product -> {
+                    productRepository.delete(product);
+                    return true;
+                })
+                .orElse(false);
+    }
+}
+@@@@
+**Explanation:**
+*   **`@Service`**: Marks this class as a Spring service component, indicating it holds business logic.
+*   **Dependency Injection**: `ProductRepository` is injected into the `ProductService` constructor. Spring manages the lifecycle of these beans.
+*   **Business Logic**: This layer contains methods like `getAllProducts`, `getProductById`, `createProduct`, `updateProduct`, and `deleteProduct`.
+    *   Notice the `createProduct` method includes a simple validation: it checks if a product with the same name already exists before saving. This is an example of business logic.
+    *   Methods like `getProductById` and `updateProduct` return `Optional` to clearly indicate that a resource might not be found, promoting safer code.
+    *   The `updateProduct` method retrieves the existing product, updates its fields, and then saves it.
+
+---
+
+### 7. Controller Layer
+
+Exposes RESTful endpoints for the Product API.
+
+$$$$ src/main/java/com/example/demo/controller
+&&&& ProductController.java
+@@@@
+package com.example.demo.controller;
+
+import com.example.demo.model.Product;
+import com.example.demo.service.ProductService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+/**
+ * REST Controller for Product management.
+ * Handles incoming HTTP requests and sends back HTTP responses.
+ *
+ * @RestController: A convenience annotation that combines @Controller and @ResponseBody.
+ *                  It marks the class as a Spring MVC controller where every method
+ *                  returns a domain object instead of a view, and the domain object
+ *                  is converted to JSON/XML (depending on the client's Accept header).
+ * @RequestMapping: Maps HTTP requests to handler methods of MVC and REST controllers.
+ *                  Here, it sets the base URL for all endpoints in this controller to /api/products.
+ */
+@RestController
+@RequestMapping("/api/products")
+public class ProductController {
+
+    private final ProductService productService;
+
+    /**
+     * Constructor for ProductController, injecting ProductService.
+     *
+     * @param productService The service for Product entities.
+     */
+    @Autowired
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
+
+    /**
+     * GET /api/products : Get all products.
+     *
+     * @return A ResponseEntity containing a list of products and HTTP status OK.
+     */
+    @GetMapping
+    public ResponseEntity<List<Product>> getAllProducts() {
+        List<Product> products = productService.getAllProducts();
+        return ResponseEntity.ok(products); // Returns 200 OK with the list of products
+    }
+
+    /**
+     * GET /api/products/{id} : Get a product by its ID.
+     *
+     * @param id The ID of the product to retrieve.
+     * @return A ResponseEntity containing the product if found (200 OK), or 404 Not Found.
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
+        return productService.getProductById(id)
+                .map(ResponseEntity::ok) // If product found, return 200 OK with product
+                .orElse(ResponseEntity.notFound().build()); // If not found, return 404 Not Found
+    }
+
+    /**
+     * POST /api/products : Create a new product.
+     *
+     * @param product The product object to be created, sent in the request body.
+     * @return A ResponseEntity containing the created product (201 Created), or 400 Bad Request
+     *         if a product with the same name already exists.
+     */
+    @PostMapping
+    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
+        try {
+            Product createdProduct = productService.createProduct(product);
+            return new ResponseEntity<>(createdProduct, HttpStatus.CREATED); // Returns 201 Created
+        } catch (IllegalArgumentException e) {
+            // Handle business logic errors, e.g., product with same name exists
+            return ResponseEntity.badRequest().build(); // Or return a custom error body
+        }
+    }
+
+    /**
+     * PUT /api/products/{id} : Update an existing product.
+     *
+     * @param id The ID of the product to update.
+     * @param productDetails The product object containing updated details, sent in the request body.
+     * @return A ResponseEntity containing the updated product (200 OK), or 404 Not Found.
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product productDetails) {
+        return productService.updateProduct(id, productDetails)
+                .map(ResponseEntity::ok) // If product updated, return 200 OK with updated product
+                .orElse(ResponseEntity.notFound().build()); // If not found, return 404 Not Found
+    }
+
+    /**
+     * DELETE /api/products/{id} : Delete a product by its ID.
+     *
+     * @param id The ID of the product to delete.
+     * @return A ResponseEntity with 204 No Content if deleted, or 404 Not Found.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        if (productService.deleteProduct(id)) {
+            return ResponseEntity.noContent().build(); // 204 No Content for successful deletion
+        } else {
+            return ResponseEntity.notFound().build(); // 404 Not Found if product doesn't exist
+        }
+    }
+}
+@@@@
+**Explanation:**
+*   **`@RestController`**: Combines `@Controller` and `@ResponseBody`. It means this class handles incoming web requests and directly returns the response body (typically JSON/XML).
+*   **`@RequestMapping("/api/products")`**: Sets the base path for all endpoints in this controller to `/api/products`.
+*   **`@Autowired`**: Injects `ProductService`.
+*   **`@GetMapping`, `@PostMapping`, `@PutMapping`, `@DeleteMapping`**: Map HTTP GET, POST, PUT, DELETE requests to specific handler methods.
+*   **`@PathVariable Long id`**: Extracts the `id` from the URL path (e.g., `/api/products/1`).
+*   **`@RequestBody Product product`**: Binds the HTTP request body (JSON) to a `Product` object.
+*   **`ResponseEntity`**: A flexible way to return HTTP responses, allowing you to control the status code, headers, and body.
+    *   `ResponseEntity.ok(body)`: Returns HTTP 200 OK.
+    *   `new ResponseEntity<>(body, HttpStatus.CREATED)`: Returns HTTP 201 Created.
+    *   `ResponseEntity.notFound().build()`: Returns HTTP 404 Not Found.
+    *   `ResponseEntity.noContent().build()`: Returns HTTP 204 No Content.
+    *   `ResponseEntity.badRequest().build()`: Returns HTTP 400 Bad Request.
+
+---
+
+### 8. Unit Test for Service Layer
+
+Testing the `ProductService` in isolation, mocking the `ProductRepository`.
 
 $$$$ src/test/java/com/example/demo/service
 &&&& ProductServiceTest.java
 @@@@
 package com.example.demo.service;
 
-import com.example.demo.exception.ProductNotFoundException;
 import com.example.demo.model.Product;
 import com.example.demo.repository.ProductRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -499,151 +554,210 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class) // Initializes Mockito mocks
+/**
+ * Unit tests for the ProductService.
+ * Uses Mockito to mock the ProductRepository dependency.
+ *
+ * @ExtendWith(MockitoExtension.class): Integrates Mockito with JUnit 5.
+ */
+@ExtendWith(MockitoExtension.class)
 class ProductServiceTest {
 
-    @Mock // Creates a mock instance of ProductRepository
+    // Mock the ProductRepository dependency
+    @Mock
     private ProductRepository productRepository;
 
-    @InjectMocks // Injects the mocks into ProductService
+    // Inject mocks into ProductService instance
+    @InjectMocks
     private ProductService productService;
 
     private Product product1;
     private Product product2;
 
-    @BeforeEach // Runs before each test method
+    /**
+     * Set up common test data before each test method runs.
+     */
+    @BeforeEach
     void setUp() {
-        product1 = new Product(1L, "Laptop", 1200.00, "Powerful laptop for work and gaming");
-        product2 = new Product(2L, "Mouse", 25.00, "Ergonomic wireless mouse");
+        product1 = new Product(1L, "Laptop", 1200.00, "Powerful laptop");
+        product2 = new Product(2L, "Mouse", 25.00, "Wireless mouse");
     }
 
     @Test
-    void testGetAllProducts() {
-        when(productRepository.findAll()).thenReturn(Arrays.asList(product1, product2));
+    @DisplayName("Should return all products")
+    void getAllProducts_shouldReturnAllProducts() {
+        // Arrange
+        List<Product> products = Arrays.asList(product1, product2);
+        when(productRepository.findAll()).thenReturn(products);
 
-        List<Product> products = productService.getAllProducts();
+        // Act
+        List<Product> result = productService.getAllProducts();
 
-        assertNotNull(products);
-        assertEquals(2, products.size());
-        assertEquals("Laptop", products.get(0).getName());
-        verify(productRepository, times(1)).findAll(); // Verifies that findAll was called once
+        // Assert
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(product1.getName(), result.get(0).getName());
+        assertEquals(product2.getName(), result.get(1).getName());
+        verify(productRepository, times(1)).findAll(); // Verify findAll was called once
     }
 
     @Test
-    void testGetProductByIdFound() {
+    @DisplayName("Should return product by ID when found")
+    void getProductById_shouldReturnProduct_whenFound() {
+        // Arrange
         when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
 
-        Product foundProduct = productService.getProductById(1L);
+        // Act
+        Optional<Product> result = productService.getProductById(1L);
 
-        assertNotNull(foundProduct);
-        assertEquals("Laptop", foundProduct.getName());
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals(product1.getName(), result.get().getName());
         verify(productRepository, times(1)).findById(1L);
     }
 
     @Test
-    void testGetProductByIdNotFound() {
+    @DisplayName("Should return empty optional when product by ID not found")
+    void getProductById_shouldReturnEmptyOptional_whenNotFound() {
+        // Arrange
         when(productRepository.findById(3L)).thenReturn(Optional.empty());
 
-        Exception exception = assertThrows(ProductNotFoundException.class, () -> {
-            productService.getProductById(3L);
-        });
+        // Act
+        Optional<Product> result = productService.getProductById(3L);
 
-        String expectedMessage = "Product not found with id: 3";
-        String actualMessage = exception.getMessage();
-        assertTrue(actualMessage.contains(expectedMessage));
+        // Assert
+        assertFalse(result.isPresent());
         verify(productRepository, times(1)).findById(3L);
     }
 
     @Test
-    void testCreateProduct() {
-        when(productRepository.save(any(Product.class))).thenReturn(product1);
+    @DisplayName("Should create a new product successfully")
+    void createProduct_shouldCreateProduct_whenNameDoesNotExist() {
+        // Arrange
+        Product newProduct = new Product(null, "Keyboard", 75.00, "Mechanical keyboard");
+        when(productRepository.findByName(newProduct.getName())).thenReturn(Optional.empty());
+        when(productRepository.save(newProduct)).thenReturn(new Product(3L, "Keyboard", 75.00, "Mechanical keyboard"));
 
-        Product createdProduct = productService.createProduct(product1);
+        // Act
+        Product createdProduct = productService.createProduct(newProduct);
 
+        // Assert
         assertNotNull(createdProduct);
-        assertEquals("Laptop", createdProduct.getName());
-        verify(productRepository, times(1)).save(product1);
+        assertEquals(3L, createdProduct.getId());
+        assertEquals("Keyboard", createdProduct.getName());
+        verify(productRepository, times(1)).findByName("Keyboard");
+        verify(productRepository, times(1)).save(newProduct);
     }
 
     @Test
-    void testUpdateProductFound() {
-        Product updatedDetails = new Product(1L, "Gaming Laptop", 1500.00, "High-performance gaming laptop");
+    @DisplayName("Should throw IllegalArgumentException when creating product with existing name")
+    void createProduct_shouldThrowException_whenNameExists() {
+        // Arrange
+        Product newProduct = new Product(null, "Laptop", 1500.00, "Gaming laptop"); // Name 'Laptop' already exists (product1)
+        when(productRepository.findByName(newProduct.getName())).thenReturn(Optional.of(product1)); // Simulate existing product
+
+        // Act & Assert
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
+            productService.createProduct(newProduct);
+        });
+        assertEquals("Product with name 'Laptop' already exists.", thrown.getMessage());
+        verify(productRepository, times(1)).findByName("Laptop");
+        verify(productRepository, never()).save(any(Product.class)); // Verify save was NOT called
+    }
+
+    @Test
+    @DisplayName("Should update an existing product when found")
+    void updateProduct_shouldUpdateProduct_whenFound() {
+        // Arrange
+        Product updatedDetails = new Product(1L, "Laptop Pro", 1300.00, "Updated powerful laptop");
         when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
         when(productRepository.save(any(Product.class))).thenReturn(updatedDetails); // Mock save returns the updated product
 
-        Product result = productService.updateProduct(1L, updatedDetails);
+        // Act
+        Optional<Product> result = productService.updateProduct(1L, updatedDetails);
 
-        assertNotNull(result);
-        assertEquals("Gaming Laptop", result.getName());
-        assertEquals(1500.00, result.getPrice());
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals("Laptop Pro", result.get().getName());
+        assertEquals(1300.00, result.get().getPrice());
         verify(productRepository, times(1)).findById(1L);
         verify(productRepository, times(1)).save(any(Product.class));
     }
 
     @Test
-    void testUpdateProductNotFound() {
-        Product updatedDetails = new Product(3L, "Non-existent Product", 100.00, "Description");
+    @DisplayName("Should return empty optional when updating non-existent product")
+    void updateProduct_shouldReturnEmptyOptional_whenNotFound() {
+        // Arrange
+        Product updatedDetails = new Product(3L, "NonExistent", 100.00, "Non-existent product");
         when(productRepository.findById(3L)).thenReturn(Optional.empty());
 
-        Exception exception = assertThrows(ProductNotFoundException.class, () -> {
-            productService.updateProduct(3L, updatedDetails);
-        });
+        // Act
+        Optional<Product> result = productService.updateProduct(3L, updatedDetails);
 
-        assertTrue(exception.getMessage().contains("Product not found with id: 3"));
+        // Assert
+        assertFalse(result.isPresent());
         verify(productRepository, times(1)).findById(3L);
-        verify(productRepository, never()).save(any(Product.class)); // Ensure save is not called
+        verify(productRepository, never()).save(any(Product.class)); // Verify save was NOT called
     }
 
     @Test
-    void testDeleteProductFound() {
-        when(productRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(productRepository).deleteById(1L);
+    @DisplayName("Should delete a product successfully when found")
+    void deleteProduct_shouldDeleteProduct_whenFound() {
+        // Arrange
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
+        doNothing().when(productRepository).delete(product1); // Mock void method
 
-        productService.deleteProduct(1L);
+        // Act
+        boolean result = productService.deleteProduct(1L);
 
-        verify(productRepository, times(1)).existsById(1L);
-        verify(productRepository, times(1)).deleteById(1L);
+        // Assert
+        assertTrue(result);
+        verify(productRepository, times(1)).findById(1L);
+        verify(productRepository, times(1)).delete(product1);
     }
 
     @Test
-    void testDeleteProductNotFound() {
-        when(productRepository.existsById(3L)).thenReturn(false);
+    @DisplayName("Should return false when deleting non-existent product")
+    void deleteProduct_shouldReturnFalse_whenNotFound() {
+        // Arrange
+        when(productRepository.findById(3L)).thenReturn(Optional.empty());
 
-        Exception exception = assertThrows(ProductNotFoundException.class, () -> {
-            productService.deleteProduct(3L);
-        });
+        // Act
+        boolean result = productService.deleteProduct(3L);
 
-        assertTrue(exception.getMessage().contains("Product not found with id: 3"));
-        verify(productRepository, times(1)).existsById(3L);
-        verify(productRepository, never()).deleteById(anyLong()); // Ensure deleteById is not called
+        // Assert
+        assertFalse(result);
+        verify(productRepository, times(1)).findById(3L);
+        verify(productRepository, never()).delete(any(Product.class)); // Verify delete was NOT called
     }
 }
 @@@@
 **Explanation:**
-*   `@ExtendWith(MockitoExtension.class)`: Integrates JUnit 5 with Mockito.
-*   `@Mock`: Creates a mock object for `ProductRepository`. This mock will simulate the behavior of the real repository, allowing us to test the `ProductService` in isolation.
-*   `@InjectMocks`: Injects the mock `ProductRepository` into `ProductService`.
-*   `@BeforeEach`: Sets up common test data before each test method runs.
-*   `when().thenReturn()`: Configures the behavior of the mock repository.
-*   `verify()`: Checks if specific methods on the mock object were called.
-*   `assertThrows()`: JUnit 5 assertion to verify that a specific exception is thrown.
+*   **`@ExtendWith(MockitoExtension.class)`**: Integrates Mockito with JUnit 5.
+*   **`@Mock private ProductRepository productRepository;`**: Creates a mock instance of `ProductRepository`. This mock will simulate the behavior of the real repository.
+*   **`@InjectMocks private ProductService productService;`**: Injects the mocked `ProductRepository` into an instance of `ProductService`. This is the class we are testing.
+*   **`@BeforeEach`**: Method runs before each test to set up common test data.
+*   **`when(...).thenReturn(...)`**: Mockito's way of defining the behavior of mock objects. For example, `when(productRepository.findAll()).thenReturn(products);` tells the mock to return `products` whenever `findAll()` is called.
+*   **`doNothing().when(...).delete(...)`**: Used for mocking void methods.
+*   **`verify(mock, times(n)).method()`**: Verifies that a specific method on a mock was called a certain number of times. `never()` verifies it was never called.
+*   **`Assertions`**: JUnit 5 assertions (`assertEquals`, `assertTrue`, `assertFalse`, `assertNotNull`, `assertThrows`) are used to check expected outcomes.
 
 ---
 
-#### **ProductController Test**
+### 9. Unit Test for Controller Layer
 
-Tests the REST endpoints of the `ProductController`. Uses Spring's `MockMvc` for simulating HTTP requests without starting a full server.
+Testing the `ProductController` using MockMvc to simulate HTTP requests without starting a full server.
 
 $$$$ src/test/java/com/example/demo/controller
 &&&& ProductControllerTest.java
 @@@@
 package com.example.demo.controller;
 
-import com.example.demo.exception.ProductNotFoundException;
 import com.example.demo.model.Product;
 import com.example.demo.service.ProductService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -652,25 +766,30 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(ProductController.class) // Focuses on testing the ProductController by disabling full auto-configuration
+/**
+ * Unit tests for the ProductController.
+ * Uses @WebMvcTest to focus on Spring MVC components and mocks other layers.
+ */
+@WebMvcTest(ProductController.class) // Only loads ProductController and its dependencies
 class ProductControllerTest {
 
     @Autowired
-    private MockMvc mockMvc; // Provides methods for sending HTTP requests to the controller
-
-    @MockBean // Creates a mock bean for ProductService in the Spring application context
-    private ProductService productService;
+    private MockMvc mockMvc; // Used to simulate HTTP requests
 
     @Autowired
-    private ObjectMapper objectMapper; // Used to convert Java objects to JSON strings and vice-versa
+    private ObjectMapper objectMapper; // Used to convert objects to/from JSON
+
+    // Mock the ProductService dependency for isolation
+    @MockBean
+    private ProductService productService;
 
     private Product product1;
     private Product product2;
@@ -682,96 +801,129 @@ class ProductControllerTest {
     }
 
     @Test
-    void testGetAllProducts() throws Exception {
-        List<Product> products = Arrays.asList(product1, product2);
-        when(productService.getAllProducts()).thenReturn(products);
+    @DisplayName("GET /api/products should return list of products")
+    void getAllProducts_shouldReturnListOfProducts() throws Exception {
+        // Arrange
+        when(productService.getAllProducts()).thenReturn(Arrays.asList(product1, product2));
 
-        mockMvc.perform(get("/api/products") // Perform a GET request
-                        .contentType(MediaType.APPLICATION_JSON)) // Set content type
+        // Act & Assert
+        mockMvc.perform(get("/api/products")
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk()) // Expect HTTP 200 OK
-                .andExpect(jsonPath("$.length()").value(2)) // Expect two items in the JSON array
-                .andExpect(jsonPath("$[0].name").value("Laptop")) // Verify data of the first item
-                .andExpect(jsonPath("$[1].name").value("Mouse"));
-        
+                .andExpect(jsonPath("$", hasSize(2))) // Expect a JSON array of size 2
+                .andExpect(jsonPath("$[0].name", is(product1.getName())))
+                .andExpect(jsonPath("$[1].name", is(product2.getName())));
+
         verify(productService, times(1)).getAllProducts();
     }
 
     @Test
-    void testGetProductByIdFound() throws Exception {
-        when(productService.getProductById(1L)).thenReturn(product1);
+    @DisplayName("GET /api/products/{id} should return product when found")
+    void getProductById_shouldReturnProduct_whenFound() throws Exception {
+        // Arrange
+        when(productService.getProductById(1L)).thenReturn(Optional.of(product1));
 
+        // Act & Assert
         mockMvc.perform(get("/api/products/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Laptop"));
+                .andExpect(status().isOk()) // Expect HTTP 200 OK
+                .andExpect(jsonPath("$.id", is(product1.getId().intValue())))
+                .andExpect(jsonPath("$.name", is(product1.getName())));
 
         verify(productService, times(1)).getProductById(1L);
     }
 
     @Test
-    void testGetProductByIdNotFound() throws Exception {
-        when(productService.getProductById(anyLong())).thenThrow(new ProductNotFoundException("Product not found"));
+    @DisplayName("GET /api/products/{id} should return 404 Not Found when product not found")
+    void getProductById_shouldReturnNotFound_whenNotFound() throws Exception {
+        // Arrange
+        when(productService.getProductById(99L)).thenReturn(Optional.empty());
 
+        // Act & Assert
         mockMvc.perform(get("/api/products/{id}", 99L)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound()) // Expect HTTP 404 Not Found
-                .andExpect(jsonPath("$.message").value("Product not found"));
+                .andExpect(status().isNotFound()); // Expect HTTP 404 Not Found
 
         verify(productService, times(1)).getProductById(99L);
     }
 
     @Test
-    void testCreateProduct() throws Exception {
+    @DisplayName("POST /api/products should create new product")
+    void createProduct_shouldCreateProduct() throws Exception {
+        // Arrange
         Product newProduct = new Product(null, "Keyboard", 75.00, "Mechanical keyboard");
         Product savedProduct = new Product(3L, "Keyboard", 75.00, "Mechanical keyboard");
         when(productService.createProduct(any(Product.class))).thenReturn(savedProduct);
 
+        // Act & Assert
         mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(newProduct))) // Convert object to JSON string
+                        .content(objectMapper.writeValueAsString(newProduct))) // Convert Product object to JSON
                 .andExpect(status().isCreated()) // Expect HTTP 201 Created
-                .andExpect(jsonPath("$.id").value(3L))
-                .andExpect(jsonPath("$.name").value("Keyboard"));
+                .andExpect(jsonPath("$.id", is(3)))
+                .andExpect(jsonPath("$.name", is("Keyboard")));
 
         verify(productService, times(1)).createProduct(any(Product.class));
     }
 
     @Test
-    void testUpdateProduct() throws Exception {
-        Product updatedProductDetails = new Product(1L, "Gaming Laptop", 1500.00, "High-end gaming laptop");
-        when(productService.updateProduct(anyLong(), any(Product.class))).thenReturn(updatedProductDetails);
+    @DisplayName("POST /api/products should return 400 Bad Request for invalid product creation")
+    void createProduct_shouldReturnBadRequest_forInvalidProduct() throws Exception {
+        // Arrange - Simulate a business rule violation (e.g., product name already exists)
+        Product newProduct = new Product(null, "Existing Product", 100.00, "Description");
+        when(productService.createProduct(any(Product.class))).thenThrow(new IllegalArgumentException("Product with name 'Existing Product' already exists."));
 
+        // Act & Assert
+        mockMvc.perform(post("/api/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(newProduct)))
+                .andExpect(status().isBadRequest()); // Expect HTTP 400 Bad Request
+
+        verify(productService, times(1)).createProduct(any(Product.class));
+    }
+
+
+    @Test
+    @DisplayName("PUT /api/products/{id} should update existing product")
+    void updateProduct_shouldUpdateProduct_whenFound() throws Exception {
+        // Arrange
+        Product updatedDetails = new Product(1L, "Laptop Pro", 1300.00, "Updated powerful laptop");
+        when(productService.updateProduct(eq(1L), any(Product.class))).thenReturn(Optional.of(updatedDetails));
+
+        // Act & Assert
         mockMvc.perform(put("/api/products/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedProductDetails)))
+                        .content(objectMapper.writeValueAsString(updatedDetails)))
                 .andExpect(status().isOk()) // Expect HTTP 200 OK
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.name").value("Gaming Laptop"))
-                .andExpect(jsonPath("$.price").value(1500.00));
+                .andExpect(jsonPath("$.id", is(1)))
+                .andExpect(jsonPath("$.name", is("Laptop Pro")));
 
         verify(productService, times(1)).updateProduct(eq(1L), any(Product.class));
     }
 
     @Test
-    void testUpdateProductNotFound() throws Exception {
-        Product updatedProductDetails = new Product(99L, "Non-existent", 100.00, "Description");
-        when(productService.updateProduct(anyLong(), any(Product.class)))
-                .thenThrow(new ProductNotFoundException("Product not found with id: 99"));
+    @DisplayName("PUT /api/products/{id} should return 404 Not Found when updating non-existent product")
+    void updateProduct_shouldReturnNotFound_whenNotFound() throws Exception {
+        // Arrange
+        Product updatedDetails = new Product(99L, "NonExistent", 100.00, "Non-existent product");
+        when(productService.updateProduct(eq(99L), any(Product.class))).thenReturn(Optional.empty());
 
+        // Act & Assert
         mockMvc.perform(put("/api/products/{id}", 99L)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedProductDetails)))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Product not found with id: 99"));
+                        .content(objectMapper.writeValueAsString(updatedDetails)))
+                .andExpect(status().isNotFound()); // Expect HTTP 404 Not Found
 
         verify(productService, times(1)).updateProduct(eq(99L), any(Product.class));
     }
 
     @Test
-    void testDeleteProduct() throws Exception {
-        doNothing().when(productService).deleteProduct(anyLong()); // Mock void method
+    @DisplayName("DELETE /api/products/{id} should delete product successfully")
+    void deleteProduct_shouldDeleteProduct_whenFound() throws Exception {
+        // Arrange
+        when(productService.deleteProduct(1L)).thenReturn(true);
 
+        // Act & Assert
         mockMvc.perform(delete("/api/products/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent()); // Expect HTTP 204 No Content
@@ -780,74 +932,33 @@ class ProductControllerTest {
     }
 
     @Test
-    void testDeleteProductNotFound() throws Exception {
-        doThrow(new ProductNotFoundException("Product not found with id: 99"))
-                .when(productService).deleteProduct(anyLong());
+    @DisplayName("DELETE /api/products/{id} should return 404 Not Found when deleting non-existent product")
+    void deleteProduct_shouldReturnNotFound_whenNotFound() throws Exception {
+        // Arrange
+        when(productService.deleteProduct(99L)).thenReturn(false);
 
+        // Act & Assert
         mockMvc.perform(delete("/api/products/{id}", 99L)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Product not found with id: 99"));
+                .andExpect(status().isNotFound()); // Expect HTTP 404 Not Found
 
         verify(productService, times(1)).deleteProduct(99L);
     }
 }
 @@@@
 **Explanation:**
-*   `@WebMvcTest(ProductController.class)`: This annotation configures a Spring application context for testing a specific controller. It disables full auto-configuration and only scans for components relevant to web layers (controllers, filters, etc.).
-*   `MockMvc`: A powerful tool for testing Spring MVC controllers without needing to deploy the application to a server. It simulates HTTP requests and allows assertions on the response.
-*   `@MockBean`: Creates a mock instance of `ProductService` and adds it to the Spring application context as a bean. This replaces the actual `ProductService` with our mock for testing purposes.
-*   `ObjectMapper`: A Jackson library class used for serializing and deserializing JSON. Essential for converting Java objects to JSON for request bodies and back again for assertions.
-*   `mockMvc.perform()`: Initiates an HTTP request.
-*   `andExpect()`: Used to assert expectations on the response (e.g., status code, content type, JSON payload).
-*   `jsonPath("$[0].name").value("Laptop")`: Uses JSONPath expressions to navigate and assert values within the JSON response body.
-*   `doNothing().when()`: Used to mock void methods.
-*   `doThrow().when()`: Used to mock methods that throw exceptions.
+*   **`@WebMvcTest(ProductController.class)`**: This annotation tells Spring to configure only the web layer components (controllers, filters, etc.) and not the full application context. It also auto-configures `MockMvc` for testing. Only `ProductController` and its directly needed dependencies will be loaded.
+*   **`@Autowired private MockMvc mockMvc;`**: Injects `MockMvc`, which allows you to send HTTP requests to the controller without starting a real server.
+*   **`@Autowired private ObjectMapper objectMapper;`**: Injects `ObjectMapper` from Jackson, useful for converting Java objects to JSON strings and vice-versa for request/response bodies.
+*   **`@MockBean private ProductService productService;`**: Creates a Mockito mock of `ProductService` and adds it to the Spring application context as a bean. Any calls to `ProductService` from the `ProductController` will go to this mock.
+*   **`mockMvc.perform(get("/api/products"))`**: Simulates an HTTP GET request to `/api/products`.
+*   **`.andExpect(status().isOk())`**: Asserts that the HTTP status code is 200 OK.
+*   **`.andExpect(jsonPath("$", hasSize(2)))`**: Uses JSONPath to assert properties of the JSON response. `$` refers to the root element. `hasSize(2)` checks if the array has 2 elements.
+*   **`.andExpect(jsonPath("$[0].name", is(product1.getName())))`**: Asserts the name of the first product in the response.
+*   **`.content(objectMapper.writeValueAsString(newProduct))`**: Converts a Java object to its JSON string representation to be used as the request body.
+*   **`verify(productService, times(1)).createProduct(any(Product.class))`**: Verifies that the `createProduct` method on the `productService` mock was called exactly once with any `Product` object.
+*   **`eq(1L)` and `any(Product.class)`**: Mockito matchers used inside `when` and `verify` to match arguments flexibly. `eq` is for exact matching, `any` for matching any instance of a class.
 
 ---
 
-### **How to Run This Project:**
-
-1.  **Save the files:** Create the folder structure as specified and save each code block into its respective file.
-2.  **Open in IDE:** Import the project into an IDE like IntelliJ IDEA or Eclipse as a Maven project.
-3.  **Run `DemoApplication.java`:** Execute the `main` method in `DemoApplication.java`.
-4.  **Access H2 Console:** Once the application starts, you can access the H2 database console at `http://localhost:8080/h2-console`. Use JDBC URL `jdbc:h2:mem:testdb`, username `sa`, and password `password`.
-5.  **Test Endpoints (e.g., with Postman or curl):**
-    *   **Create Product (POST):**
-        ```
-        POST http://localhost:8080/api/products
-        Content-Type: application/json
-        
-        {
-            "name": "Smartphone",
-            "price": 699.99,
-            "description": "Latest model smartphone"
-        }
-        ```
-    *   **Get All Products (GET):**
-        ```
-        GET http://localhost:8080/api/products
-        ```
-    *   **Get Product by ID (GET):**
-        ```
-        GET http://localhost:8080/api/products/1
-        ```
-    *   **Update Product (PUT):**
-        ```
-        PUT http://localhost:8080/api/products/1
-        Content-Type: application/json
-        
-        {
-            "id": 1,
-            "name": "Premium Smartphone",
-            "price": 749.99,
-            "description": "Updated latest model smartphone with extra features"
-        }
-        ```
-    *   **Delete Product (DELETE):**
-        ```
-        DELETE http://localhost:8080/api/products/1
-        ```
-6.  **Run Tests:** In your IDE, you can run all tests or individual test classes/methods from `ProductServiceTest.java` and `ProductControllerTest.java`.
-
-This template provides a solid foundation for building a robust Spring Boot REST API! Let me know if you need any further customization or have more questions.
+This complete template provides a robust starting point for building Spring Boot REST APIs, adhering to common architectural patterns and including essential unit tests for maintainability.
