@@ -1,807 +1,893 @@
-Here's a comprehensive code template for a Spring Boot REST API, including a basic CRUD example for a `Product` entity, along with unit tests and explanations.
+Here is a complete code template for a Python Django Rest Framework application, including models, serializers, views, URLs, and unit tests.
 
-This example uses:
-*   **Spring Web**: For building RESTful endpoints.
-*   **Spring Data JPA**: For data access with an ORM.
-*   **H2 Database**: An in-memory database for easy setup and testing.
-*   **Lombok**: To reduce boilerplate code (getters, setters, constructors).
+This template will create a simple API for managing "Products".
 
-Let's start with the `pom.xml` which defines all necessary dependencies.
+**Project Structure Overview:**
+
+```
+myproject/
+├── manage.py
+├── myproject/
+│   ├── __init__.py
+│   ├── asgi.py
+│   ├── settings.py
+│   ├── urls.py
+│   └── wsgi.py
+└── myapp/
+    ├── __init__.py
+    ├── admin.py
+    ├── apps.py
+    ├── migrations/
+    │   └── __init__.py
+    ├── models.py
+    ├── serializers.py
+    ├── tests.py
+    ├── urls.py
+    └── views.py
+```
+
+---
+
+**1. Project Setup (Root Level)**
 
 $$$$
-&&&&pom.xml
+&&&& manage.py
 @@@@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.5</version> <!-- Use the latest stable Spring Boot version -->
-        <relativePath/> <!-- lookup parent from repository -->
-    </parent>
-    <groupId>com.example</groupId>
-    <artifactId>demo</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>demo</name>
-    <description>Demo project for Spring Boot REST API</description>
+#!/usr/bin/env python
+"""Django's command-line utility for administrative tasks."""
+import os
+import sys
 
-    <properties>
-        <java.version>17</java.version> <!-- Ensure this matches your JDK version -->
-    </properties>
 
-    <dependencies>
-        <!-- Spring Boot Starter Web: Includes Tomcat and Spring MVC -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
+def main():
+    """Run administrative tasks."""
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
+    try:
+        from django.core.management import execute_from_command_line
+    except ImportError as exc:
+        raise ImportError(
+            "Couldn't import Django. Are you sure it's installed and "
+            "available on your PYTHONPATH environment variable? Did you "
+            "forget to activate a virtual environment?"
+        ) from exc
+    execute_from_command_line(sys.argv)
 
-        <!-- Spring Boot Starter Data JPA: Includes Hibernate and Spring Data JPA -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
 
-        <!-- H2 Database: An in-memory database for development and testing -->
-        <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- Lombok: Reduces boilerplate code like getters, setters, constructors -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
-        </dependency>
-
-        <!-- Spring Boot Starter Test: Includes JUnit, Mockito, Spring Test -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
-</project>
+if __name__ == '__main__':
+    main()
 @@@@
-**Explanation:**
-This `pom.xml` defines the project's dependencies and build configuration.
-*   `spring-boot-starter-parent`: Provides Spring Boot defaults for Maven, including dependency management.
-*   `spring-boot-starter-web`: Essential for building web applications, includes embedded Tomcat and Spring MVC.
-*   `spring-boot-starter-data-jpa`: Provides everything needed to use JPA with Hibernate, including Spring Data JPA for easy repository creation.
-*   `h2`: An in-memory database used for development and testing. It's easy to set up and doesn't require an external database server. `scope` is `runtime` because it's typically only needed at runtime, not compile time.
-*   `lombok`: A library that automatically plugs into your build process to generate boilerplate code (like getters, setters, constructors, `equals`, `hashCode`, `toString`) at compile time, keeping your source code clean.
-*   `spring-boot-starter-test`: Contains all necessary libraries for testing Spring Boot applications, including JUnit 5, Mockito, and Spring Test.
+**Explanation:** This is the standard `manage.py` file generated by Django. It's the entry point for running Django commands like `runserver`, `makemigrations`, `migrate`, `test`, etc.
 
 ---
 
-Next, the main application class.
+**2. Project Configuration**
 
-$$$$src/main/java/com/example/demo
-&&&&DemoApplication.java
+$$$$ myproject/
+&&&& __init__.py
 @@@@
-package com.example.demo;
+# This file marks the 'myproject' directory as a Python package.
+@@@@
+**Explanation:** Standard Python package initializer.
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+$$$$ myproject/
+&&&& settings.py
+@@@@
+"""
+Django settings for myproject project.
 
-@SpringBootApplication
-public class DemoApplication {
+Generated by 'django-admin startproject' using Django 5.0.6.
 
-    public static void main(String[] args) {
-        SpringApplication.run(DemoApplication.class, args);
+For more information on this file, see
+https://docs.djangoproject.com/en/5.0/topics/settings/
+
+For the full list of settings and their values, see
+https://docs.djangoproject.com/en/5.0/ref/settings/
+"""
+
+from pathlib import Path
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = 'django-insecure-j%871r@s7+p-k00@+g*a%v9t!*r7x98%1&e7^t060d*5p%e7' # Replace with a strong, unique key in production!
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
+ALLOWED_HOSTS = []
+
+
+# Application definition
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    # Third-party apps
+    'rest_framework', # Django REST Framework
+    # My apps
+    'myapp', # Your custom application
+]
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+ROOT_URLCONF = 'myproject.urls'
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
+WSGI_APPLICATION = 'myproject.wsgi.application'
+
+
+# Database
+# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
+}
 
+
+# Password validation
+# https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
+
+# Internationalization
+# https://docs.djangoproject.com/en/5.0/topics/i18n/
+
+LANGUAGE_CODE = 'en-us'
+
+TIME_ZONE = 'UTC'
+
+USE_I18N = True
+
+USE_TZ = True
+
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.0/howto/static-files/
+
+STATIC_URL = 'static/'
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Django REST Framework settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly', # Allow read for anonymous, write for authenticated
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10, # Number of items per page for pagination
 }
 @@@@
 **Explanation:**
-`@SpringBootApplication` is a convenience annotation that combines three common Spring Boot annotations:
-1.  `@Configuration`: Tags the class as a source of bean definitions for the application context.
-2.  `@EnableAutoConfiguration`: Tells Spring Boot to start adding beans based on classpath settings, other beans, and various property settings.
-3.  `@ComponentScan`: Tells Spring to look for other components, configurations, and services in the `com.example.demo` package, allowing it to find and register controllers, services, repositories, etc.
-The `main` method uses `SpringApplication.run()` to launch the Spring Boot application.
+*   `INSTALLED_APPS`: We've added `'rest_framework'` and `'myapp'` to enable DRF and our custom application.
+*   `DATABASES`: Uses a default SQLite database, suitable for development.
+*   `REST_FRAMEWORK`: This dictionary configures DRF:
+    *   `DEFAULT_AUTHENTICATION_CLASSES`: Specifies authentication methods. `SessionAuthentication` is good for browser-based APIs, and `BasicAuthentication` provides simple username/password.
+    *   `DEFAULT_PERMISSION_CLASSES`: Defines global permissions. `IsAuthenticatedOrReadOnly` allows unauthenticated users to perform read-only actions (GET, HEAD, OPTIONS) but requires authentication for write actions (POST, PUT, PATCH, DELETE).
+    *   `DEFAULT_PAGINATION_CLASS` and `PAGE_SIZE`: Configures global pagination for list views, returning 10 items per page by default.
+
+$$$$ myproject/
+&&&& urls.py
+@@@@
+"""
+URL configuration for myproject project.
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/5.0/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  path('', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.urls import include, path
+    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+"""
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/', include('myapp.urls')), # Include URLs from your 'myapp'
+    path('api-auth/', include('rest_framework.urls')), # DRF login/logout views for browsable API
+]
+@@@@
+**Explanation:**
+*   `path('admin/', admin.site.urls)`: Default Django admin interface.
+*   `path('api/', include('myapp.urls'))`: This line routes all URLs starting with `/api/` to `myapp/urls.py`, where our API endpoints will be defined.
+*   `path('api-auth/', include('rest_framework.urls'))`: This is crucial for the DRF browsable API. It adds login/logout views, allowing you to authenticate directly from the browser when interacting with your API endpoints.
+
+$$$$ myproject/
+&&&& wsgi.py
+@@@@
+"""
+WSGI config for myproject project.
+
+It exposes the WSGI callable as a module-level variable named ``application``.
+
+For more information on this file, see
+https://docs.djangoproject.com/en/5.0/howto/deployment/wsgi/
+"""
+
+import os
+
+from django.core.wsgi import get_wsgi_application
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
+
+application = get_wsgi_application()
+@@@@
+**Explanation:** Standard WSGI entry point for serving the application.
+
+$$$$ myproject/
+&&&& asgi.py
+@@@@
+"""
+ASGI config for myproject project.
+
+It exposes the ASGI callable as a module-level variable named ``application``.
+
+For more information on this file, see
+https://docs.djangoproject.com/en/5.0/howto/deployment/asgi/
+"""
+
+import os
+
+from django.core.asgi import get_asgi_application
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myproject.settings')
+
+application = get_asgi_application()
+@@@@
+**Explanation:** Standard ASGI entry point for serving the application (e.g., for WebSockets).
 
 ---
 
-Configure the application properties for the H2 database.
+**3. Application (`myapp`)**
 
-$$$$src/main/resources
-&&&&application.properties
+$$$$ myapp/
+&&&& __init__.py
 @@@@
-# H2 Database Configuration
-spring.h2.console.enabled=true
-spring.h2.console.path=/h2-console
-spring.datasource.url=jdbc:h2:mem:testdb
-spring.datasource.driverClassName=org.h2.Driver
-spring.datasource.username=sa
-spring.datasource.password=password
+# This file marks the 'myapp' directory as a Python package.
+@@@@
+**Explanation:** Standard Python package initializer.
 
-# JPA/Hibernate Configuration
-spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
-spring.jpa.hibernate.ddl-auto=update # options: none, update, create, create-drop
-spring.jpa.show-sql=true # Log SQL queries
-spring.jpa.properties.hibernate.format_sql=true # Format SQL queries in logs
+$$$$ myapp/
+&&&& admin.py
+@@@@
+from django.contrib import admin
+from .models import Product
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    """
+    Admin configuration for the Product model.
+    Displays 'name', 'price', and 'created_at' in the list view.
+    Allows searching by 'name' and 'description'.
+    """
+    list_display = ('name', 'price', 'created_at', 'updated_at')
+    search_fields = ('name', 'description')
+    list_filter = ('created_at', 'updated_at') # Add filtering options
+    readonly_fields = ('created_at', 'updated_at') # Make these fields read-only in the admin
+@@@@
+**Explanation:** This file registers the `Product` model with the Django admin interface, making it available for management through `http://127.0.0.1:8000/admin/`. The `ProductAdmin` class customizes how the model is displayed in the admin.
+
+$$$$ myapp/
+&&&& apps.py
+@@@@
+from django.apps import AppConfig
+
+
+class MyappConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'myapp'
+@@@@
+**Explanation:** Standard Django application configuration.
+
+$$$$ myapp/
+&&&& models.py
+@@@@
+from django.db import models
+
+class Product(models.Model):
+    """
+    Represents a product in the inventory.
+    """
+    name = models.CharField(max_length=255, unique=True, help_text="Name of the product")
+    description = models.TextField(blank=True, null=True, help_text="Detailed description of the product")
+    price = models.DecimalField(max_digits=10, decimal_places=2, help_text="Price of the product")
+    is_available = models.BooleanField(default=True, help_text="Is the product currently available for purchase?")
+    created_at = models.DateTimeField(auto_now_add=True, help_text="Timestamp when the product was created")
+    updated_at = models.DateTimeField(auto_now=True, help_text="Timestamp when the product was last updated")
+
+    class Meta:
+        ordering = ['name'] # Default ordering for querysets
+        verbose_name = "Product"
+        verbose_name_plural = "Products"
+
+    def __str__(self):
+        """
+        String representation of the Product object.
+        """
+        return f"{self.name} (${self.price})"
+
+    def save(self, *args, **kwargs):
+        """
+        Custom save method can be added here if needed, e.g., for pre-processing.
+        """
+        super().save(*args, **kwargs)
+
+    def is_expensive(self):
+        """
+        Example of a custom model method.
+        """
+        return self.price > 100
 @@@@
 **Explanation:**
-*   `spring.h2.console.enabled=true`: Enables the H2 database console, accessible via your browser.
-*   `spring.h2.console.path=/h2-console`: Sets the URL path for the H2 console.
-*   `spring.datasource.url=jdbc:h2:mem:testdb`: Configures an in-memory H2 database named `testdb`. This means data will be lost when the application restarts.
-*   `spring.datasource.driverClassName`, `username`, `password`: Standard database connection properties.
-*   `spring.jpa.database-platform`: Specifies the Hibernate dialect for H2.
-*   `spring.jpa.hibernate.ddl-auto=update`: Hibernate's DDL (Data Definition Language) auto-generation strategy. `update` means it will update the schema if entities change. Other common options are `create-drop` (creates and drops on startup/shutdown, good for tests), `create` (creates on startup), and `none` (no DDL generation, useful for production with managed schemas).
-*   `spring.jpa.show-sql=true`, `spring.jpa.properties.hibernate.format_sql=true`: Configures Hibernate to log SQL statements to the console and format them for readability.
+*   `Product` Model: Defines the structure of our `Product` objects.
+    *   `name`: A `CharField` (string) for the product name, required and unique.
+    *   `description`: A `TextField` for longer text, optional.
+    *   `price`: A `DecimalField` for precise monetary values.
+    *   `is_available`: A `BooleanField` to track availability.
+    *   `created_at`: A `DateTimeField` that automatically sets the creation timestamp.
+    *   `updated_at`: A `DateTimeField` that automatically updates the timestamp on every save.
+*   `Meta` class: Provides model-specific options like default ordering and verbose names.
+*   `__str__`: Returns a human-readable string representation of the object, useful in the admin and debugging.
+
+$$$$ myapp/
+&&&& serializers.py
+@@@@
+from rest_framework import serializers
+from .models import Product
+
+class ProductSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Product model.
+    Converts Product model instances to JSON representations and vice-versa.
+    """
+    # Custom field example: Add a read-only field that indicates if the product is expensive
+    is_expensive_product = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = Product
+        fields = [
+            'id', 'name', 'description', 'price',
+            'is_available', 'created_at', 'updated_at',
+            'is_expensive_product'
+        ]
+        read_only_fields = ['created_at', 'updated_at'] # These fields are set by the model, not by user input
+
+    def get_is_expensive_product(self, obj):
+        """
+        Returns True if the product's price is greater than 100, False otherwise.
+        This method is called for the 'is_expensive_product' SerializerMethodField.
+        """
+        return obj.is_expensive() # Leverage the model method
+
+    def validate_price(self, value):
+        """
+        Custom validation for the price field.
+        Ensures the price is not negative.
+        """
+        if value < 0:
+            raise serializers.ValidationError("Price cannot be negative.")
+        return value
+
+    def create(self, validated_data):
+        """
+        Override create if you need custom logic for saving new instances.
+        """
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """
+        Override update if you need custom logic for updating existing instances.
+        """
+        return super().update(instance, validated_data)
+@@@@
+**Explanation:**
+*   `ProductSerializer`: This class defines how `Product` model instances are converted into JSON (serialization) and how incoming JSON data is converted into `Product` instances (deserialization and validation).
+*   `serializers.ModelSerializer`: A powerful class that automatically maps model fields to serializer fields.
+*   `Meta` class:
+    *   `model = Product`: Links the serializer to the `Product` model.
+    *   `fields`: Specifies which fields from the model should be included in the API representation. `'id'` is usually included.
+    *   `read_only_fields`: Fields that should be included in the output but not editable via the API (e.g., auto-generated timestamps).
+*   `is_expensive_product = serializers.SerializerMethodField`: This is an example of adding a custom read-only field to the serializer that doesn't exist directly on the model. Its value is derived from the `get_is_expensive_product` method.
+*   `validate_price`: An example of field-level validation, ensuring the price is non-negative.
+
+$$$$ myapp/
+&&&& views.py
+@@@@
+from rest_framework import viewsets, status
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from .models import Product
+from .serializers import ProductSerializer
+
+class ProductViewSet(viewsets.ModelViewSet):
+    """
+    A ViewSet for viewing and editing Product instances.
+    Provides standard CRUD operations: list, create, retrieve, update, partial_update, destroy.
+    """
+    queryset = Product.objects.all().order_by('name') # All products, ordered by name
+    serializer_class = ProductSerializer
+
+    # You can add custom actions to your ViewSet
+    @action(detail=True, methods=['post'], name='Set Availability')
+    def set_availability(self, request, pk=None):
+        """
+        Custom action to set the availability status of a product.
+        Usage: POST /api/products/{id}/set_availability/
+        Body: {"is_available": true/false}
+        """
+        product = self.get_object()
+        is_available = request.data.get('is_available')
+
+        if is_available is None or not isinstance(is_available, bool):
+            return Response(
+                {"detail": "Please provide a boolean value for 'is_available'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        product.is_available = is_available
+        product.save()
+        serializer = self.get_serializer(product)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], name='Available Products')
+    def available(self, request):
+        """
+        Custom action to list only available products.
+        Usage: GET /api/products/available/
+        """
+        available_products = self.get_queryset().filter(is_available=True)
+        page = self.paginate_queryset(available_products)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(available_products, many=True)
+        return Response(serializer.data)
+@@@@
+**Explanation:**
+*   `ProductViewSet`: This class handles all HTTP requests for our `Product` model.
+*   `viewsets.ModelViewSet`: A powerful DRF class that automatically provides CRUD (Create, Retrieve, Update, Delete) operations for a model. It maps HTTP methods (GET, POST, PUT, PATCH, DELETE) to corresponding actions.
+*   `queryset`: Specifies the base queryset that the viewset will use to retrieve objects. We fetch all `Product` objects and order them by `name`.
+*   `serializer_class`: Links the viewset to our `ProductSerializer`.
+*   `@action`: Decorator for adding custom actions to a `ViewSet`.
+    *   `set_availability`: A detail action (`detail=True`) that operates on a single product instance. It allows changing `is_available` via a POST request.
+    *   `available`: A list action (`detail=False`) that operates on the collection of products. It filters and returns only available products.
+
+$$$$ myapp/
+&&&& urls.py
+@@@@
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import ProductViewSet
+
+# Create a router and register our ViewSets with it.
+router = DefaultRouter()
+router.register(r'products', ProductViewSet, basename='product')
+
+# The API URLs are now determined automatically by the router.
+urlpatterns = [
+    path('', include(router.urls)),
+]
+@@@@
+**Explanation:**
+*   `DefaultRouter`: A DRF router that automatically generates URL patterns for `ViewSet` actions. This is very convenient as it saves you from manually writing URL patterns for each CRUD operation.
+*   `router.register(r'products', ProductViewSet, basename='product')`: Registers our `ProductViewSet` with the router.
+    *   `r'products'`: The URL prefix for this viewset (e.g., `/api/products/`, `/api/products/{id}/`).
+    *   `ProductViewSet`: The viewset to register.
+    *   `basename='product'`: Used to reverse URLs (e.g., `reverse('product-list')`, `reverse('product-detail', args=[1])`). It's important to set this when the viewset doesn't have a `queryset` attribute (though `ModelViewSet` usually does).
 
 ---
 
-Define the `Product` entity (the data model).
+**4. Unit Tests**
 
-$$$$src/main/java/com/example/demo/model
-&&&&Product.java
+$$$$ myapp/
+&&&& tests.py
 @@@@
-package com.example.demo.model;
-
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Entity
-@Table(name = "products") // Optional: specifies table name if different from class name
-@Data // Lombok: Generates getters, setters, toString, equals, hashCode
-@NoArgsConstructor // Lombok: Generates a no-argument constructor
-@AllArgsConstructor // Lombok: Generates a constructor with all fields
-public class Product {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-incrementing ID
-    private Long id;
-
-    @Column(nullable = false) // Not null constraint
-    private String name;
-
-    @Column
-    private String description;
-
-    @Column(nullable = false)
-    private double price;
-
-    @Column(nullable = false)
-    private int quantity;
-}
-@@@@
-**Explanation:**
-*   `@Entity`: Marks this class as a JPA entity, meaning it maps to a table in the database.
-*   `@Table(name = "products")`: Specifies the database table name. If omitted, the table name defaults to the class name (`Product`).
-*   `@Data`: (Lombok) Generates all the boilerplate: getters for all fields, setters for all non-final fields, `equals()` and `hashCode()` implementations, and a `toString()` method.
-*   `@NoArgsConstructor`: (Lombok) Generates a constructor with no arguments. Required by JPA.
-*   `@AllArgsConstructor`: (Lombok) Generates a constructor with arguments for all fields. Useful for creating instances.
-*   `@Id`: Marks the `id` field as the primary key of the entity.
-*   `@GeneratedValue(strategy = GenerationType.IDENTITY)`: Configures the primary key to be automatically generated by the database (e.g., auto-increment in MySQL/H2).
-*   `@Column(nullable = false)`: Specifies that the `name`, `price`, and `quantity` columns cannot be null in the database.
-
----
-
-Define the `ProductDTO` (Data Transfer Object) for request/response bodies. This helps in separating the internal entity structure from external API representation and validation.
-
-$$$$src/main/java/com/example/demo/dto
-&&&&ProductDTO.java
-@@@@
-package com.example.demo.dto;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-// DTO for Product representation (request/response)
-@Data // Lombok: Generates getters, setters, toString, equals, hashCode
-@NoArgsConstructor // Lombok: Generates a no-argument constructor
-@AllArgsConstructor // Lombok: Generates a constructor with all fields
-public class ProductDTO {
-    private Long id; // ID might be null for creation requests
-    private String name;
-    private String description;
-    private double price;
-    private int quantity;
-}
-@@@@
-**Explanation:**
-*   `ProductDTO` is a simple POJO used to transfer data between the client and the server. It's good practice to use DTOs to:
-    *   **Decouple API from Entity**: Changes to the internal `Product` entity (e.g., adding internal fields not meant for the client) don't directly affect the API contract.
-    *   **Control Data Exposure**: You can expose only specific fields or combine fields from multiple entities.
-    *   **Validation**: Validation annotations can be applied here without cluttering the entity.
-*   Lombok annotations (`@Data`, `@NoArgsConstructor`, `@AllArgsConstructor`) are used again for brevity.
-
----
-
-Define the `ProductRepository` for data access.
-
-$$$$src/main/java/com/example/demo/repository
-&&&&ProductRepository.java
-@@@@
-package com.example.demo.repository;
-
-import com.example.demo.model.Product;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import java.util.List;
-import java.util.Optional;
-
-@Repository // Optional: indicates that this is a DAO component, though JpaRepository usually implies it.
-public interface ProductRepository extends JpaRepository<Product, Long> {
-
-    // Custom query methods (Spring Data JPA generates implementation automatically)
-    Optional<Product> findByName(String name);
-    List<Product> findByPriceGreaterThan(double price);
-}
-@@@@
-**Explanation:**
-*   `@Repository`: A specialization of `@Component` that indicates that an annotated class is a "Repository". This is a marker for Spring's component scanning.
-*   `extends JpaRepository<Product, Long>`: This is the core of Spring Data JPA. By extending `JpaRepository`, you automatically get CRUD (Create, Read, Update, Delete) operations and pagination/sorting capabilities for the `Product` entity with `Long` as its primary key type.
-*   **Custom Query Methods**: Spring Data JPA allows you to define custom query methods by simply naming them according to specific conventions (e.g., `findByName`, `findByPriceGreaterThan`). Spring Data JPA will automatically generate the implementation for these methods based on the property names of your `Product` entity.
-
----
-
-Define the `ProductService` for business logic.
-
-$$$$src/main/java/com/example/demo/service
-&&&&ProductService.java
-@@@@
-package com.example.demo.service;
-
-import com.example.demo.exception.ResourceNotFoundException;
-import com.example.demo.model.Product;
-import com.example.demo.repository.ProductRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Optional;
-
-@Service // Marks this class as a Spring Service component
-public class ProductService {
-
-    private final ProductRepository productRepository;
-
-    @Autowired // Inject ProductRepository
-    public ProductService(ProductRepository productRepository) {
-        this.productRepository = productRepository;
-    }
-
-    // Create a new product
-    public Product createProduct(Product product) {
-        // Here you could add more business logic, validation, etc.
-        return productRepository.save(product);
-    }
-
-    // Get all products
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
-    }
-
-    // Get product by ID
-    public Optional<Product> getProductById(Long id) {
-        return productRepository.findById(id);
-    }
-
-    // Update an existing product
-    public Product updateProduct(Long id, Product productDetails) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
-
-        // Update fields
-        product.setName(productDetails.getName());
-        product.setDescription(productDetails.setDescription());
-        product.setPrice(productDetails.getPrice());
-        product.setQuantity(productDetails.getQuantity());
-
-        return productRepository.save(product);
-    }
-
-    // Delete a product
-    public void deleteProduct(Long id) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
-
-        productRepository.delete(product);
-    }
-
-    // You can add more specific business logic here, e.g., check stock, apply discounts, etc.
-}
-@@@@
-**Explanation:**
-*   `@Service`: Marks this class as a Spring service component. It contains business logic and acts as an intermediary between the controller and the repository.
-*   `@Autowired`: Used for dependency injection. Spring automatically provides an instance of `ProductRepository` when `ProductService` is created. Constructor injection is generally preferred for mandatory dependencies.
-*   **CRUD Operations**: Methods for creating, retrieving, updating, and deleting products are defined.
-*   `ResourceNotFoundException`: A custom exception is used to handle cases where a product with a given ID is not found. This will be caught by a global exception handler later if implemented (not in this template for brevity, but a good practice).
-
----
-
-Create a custom exception for better error handling.
-
-$$$$src/main/java/com/example/demo/exception
-&&&&ResourceNotFoundException.java
-@@@@
-package com.example.demo.exception;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
-
-@ResponseStatus(HttpStatus.NOT_FOUND) // Sets the HTTP status code for this exception
-public class ResourceNotFoundException extends RuntimeException {
-
-    public ResourceNotFoundException(String message) {
-        super(message);
-    }
-
-    public ResourceNotFoundException(String message, Throwable cause) {
-        super(message, cause);
-    }
-}
-@@@@
-**Explanation:**
-*   `@ResponseStatus(HttpStatus.NOT_FOUND)`: This annotation tells Spring to automatically return an HTTP 404 Not Found status code when this exception is thrown from a controller method. This simplifies error handling and provides a clearer API response.
-*   `extends RuntimeException`: Makes it an unchecked exception, meaning it doesn't need to be declared in method signatures.
-
----
-
-Define the `ProductController` (REST API endpoints).
-
-$$$$src/main/java/com/example/demo/controller
-&&&&ProductController.java
-@@@@
-package com.example.demo.controller;
-
-import com.example.demo.dto.ProductDTO;
-import com.example.demo.model.Product;
-import com.example.demo.service.ProductService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-@RestController // Marks this class as a REST Controller
-@RequestMapping("/api/products") // Base URL for all endpoints in this controller
-public class ProductController {
-
-    private final ProductService productService;
-
-    @Autowired // Inject ProductService
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
-
-    // Helper method to convert Entity to DTO
-    private ProductDTO convertToDto(Product product) {
-        return new ProductDTO(product.getId(), product.getName(), product.getDescription(), product.getPrice(), product.getQuantity());
-    }
-
-    // Helper method to convert DTO to Entity (for creation/update)
-    private Product convertToEntity(ProductDTO productDTO) {
-        Product product = new Product();
-        product.setId(productDTO.getId()); // ID might be null for new products
-        product.setName(productDTO.getName());
-        product.setDescription(productDTO.getDescription());
-        product.setPrice(productDTO.getPrice());
-        product.setQuantity(productDTO.getQuantity());
-        return product;
-    }
-
-    // GET all products
-    // GET /api/products
-    @GetMapping
-    public ResponseEntity<List<ProductDTO>> getAllProducts() {
-        List<ProductDTO> products = productService.getAllProducts().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(products); // Returns 200 OK with list of products
-    }
-
-    // GET product by ID
-    // GET /api/products/{id}
-    @GetMapping("/{id}")
-    public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
-        return productService.getProductById(id)
-                .map(this::convertToDto)
-                .map(ResponseEntity::ok) // Returns 200 OK with the product
-                .orElse(ResponseEntity.notFound().build()); // Returns 404 Not Found if product doesn't exist
-    }
-
-    // Create a new product
-    // POST /api/products
-    @PostMapping
-    public ResponseEntity<ProductDTO> createProduct(@RequestBody ProductDTO productDTO) {
-        Product product = convertToEntity(productDTO);
-        Product createdProduct = productService.createProduct(product);
-        return new ResponseEntity<>(convertToDto(createdProduct), HttpStatus.CREATED); // Returns 201 CREATED
-    }
-
-    // Update an existing product
-    // PUT /api/products/{id}
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id, @RequestBody ProductDTO productDTO) {
-        Product productDetails = convertToEntity(productDTO);
-        Product updatedProduct = productService.updateProduct(id, productDetails);
-        return ResponseEntity.ok(convertToDto(updatedProduct)); // Returns 200 OK
-    }
-
-    // Delete a product
-    // DELETE /api/products/{id}
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        productService.deleteProduct(id);
-        return ResponseEntity.noContent().build(); // Returns 204 No Content
-    }
-}
-@@@@
-**Explanation:**
-*   `@RestController`: Combines `@Controller` and `@ResponseBody`. `@Controller` makes it a Spring MVC controller, and `@ResponseBody` means the return value of the methods should be bound directly to the web response body.
-*   `@RequestMapping("/api/products")`: Sets the base path for all endpoints in this controller to `/api/products`.
-*   `@Autowired`: Injects `ProductService`.
-*   **`convertToDto` and `convertToEntity` methods**: These are helper methods to map between the `Product` entity and `ProductDTO`. This is crucial when separating your domain model from your API model. For larger applications, you might use a library like ModelMapper or MapStruct for this.
-*   `@GetMapping`, `@PostMapping`, `@PutMapping`, `@DeleteMapping`: Annotations to map HTTP GET, POST, PUT, and DELETE requests to specific handler methods.
-*   `@PathVariable`: Binds a URI template variable (e.g., `{id}`) to a method parameter.
-*   `@RequestBody`: Binds the HTTP request body to a method parameter (automatically deserializes JSON/XML to `ProductDTO`).
-*   `ResponseEntity`: A class that represents the entire HTTP response (status code, headers, and body). It allows for fine-grained control over the response.
-    *   `ResponseEntity.ok()`: Returns an HTTP 200 OK status.
-    *   `ResponseEntity.notFound().build()`: Returns an HTTP 404 Not Found status.
-    *   `new ResponseEntity<>(body, HttpStatus.CREATED)`: Returns an HTTP 201 Created status.
-    *   `ResponseEntity.noContent().build()`: Returns an HTTP 204 No Content status.
-
----
-
-### Unit Test Cases
-
-Now, let's create unit tests for the Service and Controller layers.
-
-#### ProductService Test
-
-$$$$src/test/java/com/example/demo/service
-&&&&ProductServiceTest.java
-@@@@
-package com.example.demo.service;
-
-import com.example.demo.exception.ResourceNotFoundException;
-import com.example.demo.model.Product;
-import com.example.demo.repository.ProductRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-@ExtendWith(MockitoExtension.class) // Enables Mockito for JUnit 5
-class ProductServiceTest {
-
-    @Mock // Creates a mock instance of ProductRepository
-    private ProductRepository productRepository;
-
-    @InjectMocks // Injects the mocks into ProductService
-    private ProductService productService;
-
-    private Product product1;
-    private Product product2;
-
-    @BeforeEach
-    void setUp() {
-        product1 = new Product(1L, "Laptop", "Powerful laptop", 1200.00, 10);
-        product2 = new Product(2L, "Mouse", "Wireless mouse", 25.00, 50);
-    }
-
-    @Test
-    void testCreateProduct() {
-        when(productRepository.save(any(Product.class))).thenReturn(product1);
-
-        Product created = productService.createProduct(product1);
-
-        assertNotNull(created);
-        assertEquals("Laptop", created.getName());
-        verify(productRepository, times(1)).save(product1);
-    }
-
-    @Test
-    void testGetAllProducts() {
-        when(productRepository.findAll()).thenReturn(Arrays.asList(product1, product2));
-
-        List<Product> products = productService.getAllProducts();
-
-        assertNotNull(products);
-        assertEquals(2, products.size());
-        assertEquals("Laptop", products.get(0).getName());
-        verify(productRepository, times(1)).findAll();
-    }
-
-    @Test
-    void testGetProductByIdFound() {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
-
-        Optional<Product> found = productService.getProductById(1L);
-
-        assertTrue(found.isPresent());
-        assertEquals("Laptop", found.get().getName());
-        verify(productRepository, times(1)).findById(1L);
-    }
-
-    @Test
-    void testGetProductByIdNotFound() {
-        when(productRepository.findById(99L)).thenReturn(Optional.empty());
-
-        Optional<Product> found = productService.getProductById(99L);
-
-        assertFalse(found.isPresent());
-        verify(productRepository, times(1)).findById(99L);
-    }
-
-    @Test
-    void testUpdateProductSuccess() {
-        Product updatedDetails = new Product(1L, "Laptop Pro", "New powerful laptop", 1500.00, 8);
-
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
-        when(productRepository.save(any(Product.class))).thenReturn(updatedDetails);
-
-        Product updated = productService.updateProduct(1L, updatedDetails);
-
-        assertNotNull(updated);
-        assertEquals("Laptop Pro", updated.getName());
-        assertEquals(1500.00, updated.getPrice());
-        verify(productRepository, times(1)).findById(1L);
-        verify(productRepository, times(1)).save(product1); // product1 is updated and saved
-    }
-
-    @Test
-    void testUpdateProductNotFound() {
-        Product updatedDetails = new Product(99L, "NonExistent", "Desc", 100.0, 1);
-        when(productRepository.findById(99L)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class, () -> productService.updateProduct(99L, updatedDetails));
-        verify(productRepository, times(1)).findById(99L);
-        verify(productRepository, never()).save(any(Product.class));
-    }
-
-    @Test
-    void testDeleteProductSuccess() {
-        when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
-        doNothing().when(productRepository).delete(product1);
-
-        productService.deleteProduct(1L);
-
-        verify(productRepository, times(1)).findById(1L);
-        verify(productRepository, times(1)).delete(product1);
-    }
-
-    @Test
-    void testDeleteProductNotFound() {
-        when(productRepository.findById(99L)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class, () -> productService.deleteProduct(99L));
-        verify(productRepository, times(1)).findById(99L);
-        verify(productRepository, never()).delete(any(Product.class));
-    }
-}
+from django.test import TestCase
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase, APIClient
+from django.contrib.auth.models import User
+
+from .models import Product
+from .serializers import ProductSerializer
+
+# --- Model Tests ---
+class ProductModelTest(TestCase):
+    """
+    Tests for the Product model.
+    """
+    def setUp(self):
+        """
+        Set up non-modified objects used by all test methods.
+        """
+        self.product1 = Product.objects.create(
+            name="Test Product 1",
+            description="Description for test product 1",
+            price=19.99,
+            is_available=True
+        )
+        self.product2 = Product.objects.create(
+            name="Test Product 2",
+            description="Another product",
+            price=120.50,
+            is_available=False
+        )
+
+    def test_product_creation(self):
+        """
+        Ensure product can be created and properties are correct.
+        """
+        self.assertEqual(Product.objects.count(), 2)
+        self.assertEqual(self.product1.name, "Test Product 1")
+        self.assertEqual(float(self.product1.price), 19.99) # Convert Decimal to float for comparison
+        self.assertTrue(self.product1.is_available)
+        self.assertIsNotNone(self.product1.created_at)
+        self.assertIsNotNone(self.product1.updated_at)
+
+    def test_product_str_representation(self):
+        """
+        Ensure the __str__ method returns the correct string.
+        """
+        self.assertEqual(str(self.product1), "Test Product 1 ($19.99)")
+
+    def test_is_expensive_method(self):
+        """
+        Ensure the custom is_expensive method works correctly.
+        """
+        self.assertFalse(self.product1.is_expensive())
+        self.assertTrue(self.product2.is_expensive())
+
+    def test_unique_name_constraint(self):
+        """
+        Ensure product names are unique.
+        """
+        with self.assertRaises(Exception): # Expecting an IntegrityError or similar
+            Product.objects.create(
+                name="Test Product 1", # Duplicate name
+                price=5.00
+            )
+
+# --- Serializer Tests ---
+class ProductSerializerTest(TestCase):
+    """
+    Tests for the ProductSerializer.
+    """
+    def setUp(self):
+        self.product_data = {
+            'name': 'New Product',
+            'description': 'A fantastic new item.',
+            'price': 25.00,
+            'is_available': True,
+        }
+        self.product = Product.objects.create(**self.product_data)
+        self.product_serializer = ProductSerializer(instance=self.product)
+
+    def test_serializer_contains_expected_fields(self):
+        """
+        Ensure the serializer output contains all expected fields.
+        """
+        data = self.product_serializer.data
+        self.assertCountEqual(data.keys(), [
+            'id', 'name', 'description', 'price',
+            'is_available', 'created_at', 'updated_at',
+            'is_expensive_product'
+        ])
+
+    def test_serializer_field_content(self):
+        """
+        Ensure the serializer output for fields matches the model instance.
+        """
+        data = self.product_serializer.data
+        self.assertEqual(data['name'], self.product.name)
+        self.assertEqual(data['description'], self.product.description)
+        self.assertEqual(float(data['price']), float(self.product.price)) # Compare floats
+        self.assertEqual(data['is_available'], self.product.is_available)
+        # Check custom field
+        self.assertEqual(data['is_expensive_product'], self.product.is_expensive())
+
+    def test_serializer_validation_for_negative_price(self):
+        """
+        Ensure serializer rejects negative prices.
+        """
+        invalid_data = self.product_data.copy()
+        invalid_data['price'] = -10.00
+        serializer = ProductSerializer(data=invalid_data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('price', serializer.errors)
+        self.assertEqual(
+            serializer.errors['price'][0], "Price cannot be negative."
+        )
+
+    def test_serializer_valid_data(self):
+        """
+        Ensure serializer accepts valid data and creates an instance.
+        """
+        new_product_data = {
+            'name': 'Another Product',
+            'description': 'Just another one.',
+            'price': 50.00,
+            'is_available': False,
+        }
+        serializer = ProductSerializer(data=new_product_data)
+        self.assertTrue(serializer.is_valid(), serializer.errors) # Print errors if not valid
+        product = serializer.save()
+        self.assertEqual(product.name, 'Another Product')
+        self.assertEqual(Product.objects.count(), 2)
+
+    def test_serializer_read_only_fields(self):
+        """
+        Ensure read-only fields are not modifiable through the serializer.
+        """
+        updated_data = {
+            'name': 'Updated Product Name',
+            'created_at': '2000-01-01T00:00:00Z', # Attempt to change read-only field
+            'updated_at': '2000-01-01T00:00:00Z', # Attempt to change read-only field
+        }
+        serializer = ProductSerializer(instance=self.product, data=updated_data, partial=True)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        product = serializer.save()
+
+        # The timestamps should not have changed to the provided values
+        self.assertNotEqual(product.created_at.isoformat(), '2000-01-01T00:00:00Z')
+        self.assertNotEqual(product.updated_at.isoformat(), '2000-01-01T00:00:00Z')
+        # Only the 'name' should have been updated
+        self.assertEqual(product.name, 'Updated Product Name')
+
+
+# --- ViewSet Tests ---
+class ProductViewSetTest(APITestCase):
+    """
+    Tests for the ProductViewSet.
+    Uses APITestCase to make API requests.
+    """
+    def setUp(self):
+        """
+        Set up data and client for API tests.
+        """
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
+        self.admin_user = User.objects.create_superuser(username='admin', password='adminpassword')
+
+        # Products for testing
+        self.product1 = Product.objects.create(
+            name="Test Product A", description="Desc A", price=10.00, is_available=True
+        )
+        self.product2 = Product.objects.create(
+            name="Test Product B", description="Desc B", price=200.00, is_available=False
+        )
+        self.product_list_url = reverse('product-list')
+        self.product_detail_url = reverse('product-detail', args=[self.product1.id])
+        self.product1_set_availability_url = reverse('product-set-availability', args=[self.product1.id])
+        self.available_products_url = reverse('product-available')
+
+
+    def test_list_products(self):
+        """
+        Ensure we can retrieve a list of products.
+        """
+        response = self.client.get(self.product_list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 2) # Check against 'results' for paginated output
+
+    def test_create_product_authenticated(self):
+        """
+        Ensure an authenticated user can create a product.
+        """
+        self.client.force_authenticate(user=self.user)
+        data = {'name': 'New Gadget', 'description': 'Cool item', 'price': 99.99, 'is_available': True}
+        response = self.client.post(self.product_list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Product.objects.count(), 3)
+        self.assertEqual(Product.objects.get(name='New Gadget').price, 99.99)
+
+    def test_create_product_unauthenticated(self):
+        """
+        Ensure an unauthenticated user cannot create a product (due to IsAuthenticatedOrReadOnly).
+        """
+        data = {'name': 'Forbidden Gadget', 'description': 'Forbidden item', 'price': 10.00, 'is_available': True}
+        response = self.client.post(self.product_list_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(Product.objects.count(), 2) # No new product created
+
+    def test_retrieve_product(self):
+        """
+        Ensure we can retrieve a single product.
+        """
+        response = self.client.get(self.product_detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], self.product1.name)
+
+    def test_update_product_authenticated(self):
+        """
+        Ensure an authenticated user can update a product.
+        """
+        self.client.force_authenticate(user=self.user)
+        updated_data = {'name': 'Updated Product A', 'price': 15.00}
+        response = self.client.patch(self.product_detail_url, updated_data, format='json') # Use PATCH for partial update
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.product1.refresh_from_db()
+        self.assertEqual(self.product1.name, 'Updated Product A')
+        self.assertEqual(float(self.product1.price), 15.00)
+
+    def test_update_product_unauthenticated(self):
+        """
+        Ensure an unauthenticated user cannot update a product.
+        """
+        updated_data = {'name': 'Unauthorized Update', 'price': 15.00}
+        response = self.client.patch(self.product_detail_url, updated_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.product1.refresh_from_db()
+        self.assertNotEqual(self.product1.name, 'Unauthorized Update')
+
+    def test_delete_product_authenticated(self):
+        """
+        Ensure an authenticated user can delete a product.
+        """
+        self.client.force_authenticate(user=self.user)
+        response = self.client.delete(self.product_detail_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Product.objects.count(), 1)
+        self.assertFalse(Product.objects.filter(id=self.product1.id).exists())
+
+    def test_delete_product_unauthenticated(self):
+        """
+        Ensure an unauthenticated user cannot delete a product.
+        """
+        response = self.client.delete(self.product_detail_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(Product.objects.count(), 2) # Product should still exist
+
+    def test_set_availability_action(self):
+        """
+        Ensure the custom 'set_availability' action works.
+        """
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.product1_set_availability_url, {'is_available': False}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.product1.refresh_from_db()
+        self.assertFalse(self.product1.is_available)
+        self.assertEqual(response.data['id'], self.product1.id)
+
+    def test_set_availability_action_invalid_data(self):
+        """
+        Ensure the 'set_availability' action handles invalid data.
+        """
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.product1_set_availability_url, {'is_available': 'not_a_bool'}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Please provide a boolean value for 'is_available'.", response.data['detail'])
+
+    def test_available_products_action(self):
+        """
+        Ensure the custom 'available' action lists only available products.
+        """
+        response = self.client.get(self.available_products_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Only product1 is available in setUp
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['name'], self.product1.name)
+
+        # Make product2 available and re-test
+        self.product2.is_available = True
+        self.product2.save()
+        response = self.client.get(self.available_products_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 2)
+
+
+# --- Initial setup to run tests ---
+# To run these tests:
+# 1. Make sure you have Django and DRF installed.
+# 2. Set up your Django project and app as described above.
+# 3. Run `python manage.py makemigrations`
+# 4. Run `python manage.py migrate`
+# 5. Run `python manage.py test myapp`
 @@@@
 **Explanation:**
-*   `@ExtendWith(MockitoExtension.class)`: Integrates Mockito with JUnit 5, allowing annotations like `@Mock` and `@InjectMocks`.
-*   `@Mock private ProductRepository productRepository;`: Creates a mock instance of `ProductRepository`. We don't want to hit a real database during unit tests, so we mock its behavior.
-*   `@InjectMocks private ProductService productService;`: Creates an instance of `ProductService` and injects the `@Mock` instances (like `productRepository`) into it.
-*   `@BeforeEach`: Method run before each test method to set up common objects (e.g., `product1`, `product2`).
-*   `when(...).thenReturn(...)`: Defines the behavior of the mocked `productRepository`. For example, `when(productRepository.findById(1L)).thenReturn(Optional.of(product1))` means when `findById(1L)` is called on the mock, it should return `Optional.of(product1)`.
-*   `any(Product.class)`: A Mockito argument matcher that matches any instance of `Product`.
-*   `verify(productRepository, times(1)).save(product1)`: Asserts that the `save` method on `productRepository` was called exactly once with `product1` as an argument.
-*   `assertThrows(ResourceNotFoundException.class, ...)`: Asserts that a specific exception is thrown.
-*   `never()`: Verifies that a method was never called.
+This file contains three classes for different types of tests:
 
----
+*   **`ProductModelTest`**:
+    *   Inherits from `django.test.TestCase`.
+    *   Tests the `Product` model's basic functionality: creation, `__str__` method, custom methods (`is_expensive`), and unique constraints.
+    *   `setUp`: Creates initial `Product` objects that can be used across multiple test methods.
 
-#### ProductController Test
+*   **`ProductSerializerTest`**:
+    *   Inherits from `django.test.TestCase`.
+    *   Tests the `ProductSerializer`'s functionality:
+        *   Ensures all expected fields are present in the serialized output.
+        *   Verifies that field content matches the model.
+        *   Tests custom validation rules (e.g., negative price).
+        *   Tests serialization and deserialization with valid data.
+        *   Confirms read-only fields are not modifiable.
 
-$$$$src/test/java/com/example/demo/controller
-&&&&ProductControllerTest.java
-@@@@
-package com.example.demo.controller;
+*   **`ProductViewSetTest`**:
+    *   Inherits from `rest_framework.test.APITestCase`. This class provides a test client (`self.client`) specifically designed for making HTTP requests to DRF views, handling authentication, and parsing JSON responses.
+    *   Tests the `ProductViewSet`'s API endpoints:
+        *   **List**: `GET` to `/api/products/`
+        *   **Create**: `POST` to `/api/products/` (tests both authenticated and unauthenticated scenarios, given `IsAuthenticatedOrReadOnly` permissions)
+        *   **Retrieve**: `GET` to `/api/products/{id}/`
+        *   **Update**: `PATCH` to `/api/products/{id}/` (tests both authenticated and unauthenticated)
+        *   **Delete**: `DELETE` to `/api/products/{id}/` (tests both authenticated and unauthenticated)
+        *   **Custom Actions**: Tests `set_availability` and `available` actions.
+    *   `setUp`: Creates test users (`self.user`, `self.admin_user`) and products, and uses `reverse` to get correct URLs for API endpoints.
+    *   `self.client.force_authenticate(user=self.user)`: Used to simulate an authenticated user for requests.
+    *   `status.HTTP_XXX_XXX`: DRF's convenient way to refer to HTTP status codes.
 
-import com.example.demo.dto.ProductDTO;
-import com.example.demo.exception.ResourceNotFoundException;
-import com.example.demo.model.Product;
-import com.example.demo.service.ProductService;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+**To run these tests:**
 
-import java.util.Arrays;
-import java.util.Optional;
-
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-@WebMvcTest(ProductController.class) // Configures Spring to test only ProductController
-class ProductControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc; // Used to send HTTP requests to the controller
-
-    @MockBean // Creates a mock of ProductService and adds it to the Spring context
-    private ProductService productService;
-
-    @Autowired
-    private ObjectMapper objectMapper; // Utility to convert objects to JSON
-
-    private Product product1;
-    private Product product2;
-    private ProductDTO productDTO1;
-    private ProductDTO productDTO2;
-
-    @BeforeEach
-    void setUp() {
-        product1 = new Product(1L, "Laptop", "Powerful laptop", 1200.00, 10);
-        product2 = new Product(2L, "Mouse", "Wireless mouse", 25.00, 50);
-
-        productDTO1 = new ProductDTO(1L, "Laptop", "Powerful laptop", 1200.00, 10);
-        productDTO2 = new ProductDTO(2L, "Mouse", "Wireless mouse", 25.00, 50);
-    }
-
-    @Test
-    void testGetAllProducts() throws Exception {
-        when(productService.getAllProducts()).thenReturn(Arrays.asList(product1, product2));
-
-        mockMvc.perform(get("/api/products")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk()) // Expect HTTP 200 OK
-                .andExpect(jsonPath("$", hasSize(2))) // Expect 2 items in the JSON array
-                .andExpect(jsonPath("$[0].name", is(productDTO1.getName())))
-                .andExpect(jsonPath("$[1].name", is(productDTO2.getName())));
-
-        verify(productService, times(1)).getAllProducts();
-    }
-
-    @Test
-    void testGetProductByIdFound() throws Exception {
-        when(productService.getProductById(1L)).thenReturn(Optional.of(product1));
-
-        mockMvc.perform(get("/api/products/{id}", 1L)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk()) // Expect HTTP 200 OK
-                .andExpect(jsonPath("$.id", is(productDTO1.getId().intValue())))
-                .andExpect(jsonPath("$.name", is(productDTO1.getName())));
-
-        verify(productService, times(1)).getProductById(1L);
-    }
-
-    @Test
-    void testGetProductByIdNotFound() throws Exception {
-        when(productService.getProductById(99L)).thenReturn(Optional.empty());
-
-        mockMvc.perform(get("/api/products/{id}", 99L)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound()); // Expect HTTP 404 Not Found
-
-        verify(productService, times(1)).getProductById(99L);
-    }
-
-    @Test
-    void testCreateProduct() throws Exception {
-        ProductDTO newProductDTO = new ProductDTO(null, "Keyboard", "Mechanical keyboard", 150.00, 20);
-        Product createdProduct = new Product(3L, "Keyboard", "Mechanical keyboard", 150.00, 20);
-
-        when(productService.createProduct(any(Product.class))).thenReturn(createdProduct);
-
-        mockMvc.perform(post("/api/products")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(newProductDTO))) // Convert DTO to JSON
-                .andExpect(status().isCreated()) // Expect HTTP 201 Created
-                .andExpect(jsonPath("$.id", is(3)))
-                .andExpect(jsonPath("$.name", is("Keyboard")));
-
-        verify(productService, times(1)).createProduct(any(Product.class));
-    }
-
-    @Test
-    void testUpdateProduct() throws Exception {
-        ProductDTO updatedProductDTO = new ProductDTO(1L, "Laptop Updated", "Updated desc", 1300.00, 9);
-        Product updatedEntity = new Product(1L, "Laptop Updated", "Updated desc", 1300.00, 9);
-
-        when(productService.updateProduct(eq(1L), any(Product.class))).thenReturn(updatedEntity);
-
-        mockMvc.perform(put("/api/products/{id}", 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedProductDTO)))
-                .andExpect(status().isOk()) // Expect HTTP 200 OK
-                .andExpect(jsonPath("$.name", is("Laptop Updated")))
-                .andExpect(jsonPath("$.price", is(1300.00)));
-
-        verify(productService, times(1)).updateProduct(eq(1L), any(Product.class));
-    }
-
-    @Test
-    void testUpdateProductNotFound() throws Exception {
-        ProductDTO updatedProductDTO = new ProductDTO(99L, "NonExistent", "Desc", 100.0, 1);
-
-        when(productService.updateProduct(eq(99L), any(Product.class)))
-                .thenThrow(new ResourceNotFoundException("Product not found with id: 99"));
-
-        mockMvc.perform(put("/api/products/{id}", 99L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updatedProductDTO)))
-                .andExpect(status().isNotFound()); // Expect HTTP 404 Not Found
-
-        verify(productService, times(1)).updateProduct(eq(99L), any(Product.class));
-    }
-
-    @Test
-    void testDeleteProduct() throws Exception {
-        doNothing().when(productService).deleteProduct(1L);
-
-        mockMvc.perform(delete("/api/products/{id}", 1L)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent()); // Expect HTTP 204 No Content
-
-        verify(productService, times(1)).deleteProduct(1L);
-    }
-
-    @Test
-    void testDeleteProductNotFound() throws Exception {
-        doThrow(new ResourceNotFoundException("Product not found with id: 99"))
-                .when(productService).deleteProduct(99L);
-
-        mockMvc.perform(delete("/api/products/{id}", 99L)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound()); // Expect HTTP 404 Not Found
-
-        verify(productService, times(1)).deleteProduct(99L);
-    }
-}
-@@@@
-**Explanation:**
-*   `@WebMvcTest(ProductController.class)`: This annotation is specific for testing Spring MVC controllers. It auto-configures Spring MVC infrastructure and limits the beans loaded to only those relevant for the controller, including `@Controller`, `@RestController`, `@ControllerAdvice`, and `@JsonComponent` beans, but not `@Service` or `@Repository` beans.
-*   `@Autowired private MockMvc mockMvc;`: `MockMvc` allows you to perform requests against the controller without starting a full HTTP server. It simulates HTTP requests and responses.
-*   `@MockBean private ProductService productService;`: Because `WebMvcTest` doesn't load `@Service` beans, we need to provide a mock for `ProductService` so the controller has its dependency satisfied.
-*   `@Autowired private ObjectMapper objectMapper;`: Used to convert Java objects (like `ProductDTO`) to JSON strings for request bodies.
-*   `mockMvc.perform(get("/api/products"))`: Initiates an HTTP GET request to `/api/products`.
-*   `.andExpect(status().isOk())`: Asserts the HTTP status code of the response.
-*   `.andExpect(jsonPath("$.name", is("Laptop")))`: Uses JsonPath expressions to assert values in the JSON response body. `$` refers to the root of the JSON.
-*   `contentType(MediaType.APPLICATION_JSON)`: Sets the `Content-Type` header of the request.
-*   `content(objectMapper.writeValueAsString(newProductDTO))`: Sets the request body to the JSON representation of `newProductDTO`.
-*   `verify(productService, times(1)).getAllProducts();`: Asserts that `productService.getAllProducts()` was called exactly once by the controller.
-*   `eq(1L)`: A Mockito argument matcher used when you have other matchers (like `any(Product.class)`) in the same method call, ensuring specific arguments are matched correctly.
-
-This template provides a solid foundation for building a Spring Boot REST API with good practices and comprehensive testing.
+1.  **Install Django and DRF:**
+    `pip install Django djangorestframework`
+2.  **Create project and app (if you haven't already with the manual steps above):**
+    `django-admin startproject myproject`
+    `cd myproject`
+    `python manage.py startapp myapp`
+3.  **Place the generated files into their respective directories.**
+4.  **Create a superuser for admin access (optional, but good for testing admin interface):**
+    `python manage.py createsuperuser`
+5.  **Apply migrations:**
+    `python manage.py makemigrations`
+    `python manage.py migrate`
+6.  **Run the tests:**
+    `python manage.py test myapp`
