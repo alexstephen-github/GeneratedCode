@@ -1,5 +1,5 @@
 """
-URL configuration for myproject project.
+URL configuration for MyProject project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.0/topics/http/urls/
@@ -19,6 +19,5 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('myapp.urls')), # Include app-specific API URLs
-    path('api-auth/', include('rest_framework.urls')), # DRF browsable API login/logout
+    path('api/', include('myapp.urls')), # Include URLs from 'myapp' under '/api/'
 ]
